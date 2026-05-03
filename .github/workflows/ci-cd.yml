@@ -42,10 +42,10 @@ jobs:
         run: |
           echo "Đang chạy Unit Tests..."
           echo "--- Testing Order Service ---"
-          cd order_service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd order_service && python -m pytest tests > ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
           cd ..
           echo "--- Testing Inventory Service ---"
-          cd inventory_service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd inventory_service && python -m pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
           cd ..
 
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
@@ -92,6 +92,8 @@ jobs:
       - name: Hiển thị nhật ký (log) trực tiếp khi có lỗi xảy ra
         if: failure()
         run: |
+          echo "--- BÁO CÁO UNIT TEST ---"
+          [ -f unit_test_report.txt ] && cat unit_test_report.txt || echo "Không tìm thấy báo cáo unit test"
           echo "--- NHẬT KÝ (LOG) CỦA ORDER SERVICE ---"
           [ -f order_service/order_service.log ] && cat order_service/order_service.log || echo "Không tìm thấy tệp nhật ký"
           echo "--- NHẬT KÝ (LOG) CỦA INVENTORY SERVICE ---"
