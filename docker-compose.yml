@@ -21,6 +21,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   order-service:
     build:
@@ -44,7 +50,8 @@ services:
     volumes:
       - ./order-service:/app
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload
     restart: unless-stopped
 
@@ -64,7 +71,8 @@ services:
     volumes:
       - ./inventory-service:/app
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload
     restart: unless-stopped
 
@@ -79,7 +87,8 @@ services:
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
       DYNAMIC_CONFIG_ENABLED: "true"
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
