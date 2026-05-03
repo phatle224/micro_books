@@ -14,8 +14,8 @@ INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://localhost:300
 
 
 def get_db():
-    from .main import db
-    return db
+    import app.main as main
+    return main.db
 
 
 @router.post("/", status_code=201)

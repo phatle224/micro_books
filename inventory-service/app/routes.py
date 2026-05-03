@@ -7,8 +7,8 @@ router = APIRouter(prefix="/api/books", tags=["Books"])
 
 
 def get_db():
-    from .main import db
-    return db
+    import app.main as main
+    return main.db
 
 
 @router.post("/", status_code=201)
