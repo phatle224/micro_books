@@ -35,8 +35,8 @@ jobs:
           # Start MongoDB
           docker run -d --name mongodb -p 27017:27017 mongo:latest
           
-          # Start Zookeeper and Kafka from docker-compose
-          docker-compose up -d zookeeper kafka
+          # Start Zookeeper and Kafka from docker compose
+          docker compose up -d zookeeper kafka
           
           # Wait for Kafka to be ready
           echo "Waiting for Kafka to start..."
