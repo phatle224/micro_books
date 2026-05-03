@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   kiem-thu:
     name: Kiểm thử toàn diện (Lint, Unit, Integration)
@@ -78,6 +82,14 @@ jobs:
           # Kiểm tra luồng dữ liệu thực tế giữa các service
           python tests/test_order_flow.py
 
+      - name: Hiển thị Log trực tiếp khi có lỗi xảy ra
+        if: failure()
+        run: |
+          echo "--- LOG CỦA ORDER SERVICE ---"
+          [ -f order-service/order_service.log ] && cat order-service/order_service.log || echo "Không tìm thấy file log"
+          echo "--- LOG CỦA INVENTORY SERVICE ---"
+          [ -f inventory-service/inventory_service.log ] && cat inventory-service/inventory_service.log || echo "Không tìm thấy file log"
+
       - name: Lưu lại Log nếu có lỗi xảy ra
         if: failure()
         uses: actions/upload-artifact@v4
@@ -87,7 +99,41 @@ jobs:
             order-service/order_service.log
             inventory-service/inventory_service.log
 
-  dong-goi-va-day-len-docker-hub:
+      - name: Tạo Issue khi lỗi
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Lỗi Kiểm thử: ${context.workflow} (#${context.runNumber})`,
+              body: `### Phát hiện lỗi trong bước Kiểm thử
+              - **Job:** ${context.job}
+              - **Người kích hoạt:** @${context.actor}
+              - **Chi tiết:** [Xem log chi tiết tại đây](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+              Vui lòng kiểm tra các file log được đính kèm trong Artifact.`
+            })
+
+      - name: Báo cáo tóm tắt kết quả
+        if: always()
+        run: |
+          echo "### 📊 Kết quả Kiểm thử (Test Report)" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "✅ **Trạng thái:** Thành công" >> $GITHUB_STEP_SUMMARY
+            echo "Tất cả các bước Linting, Unit Test và Integration Test đã vượt qua." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Trạng thái:** Thất bại" >> $GITHUB_STEP_SUMMARY
+            echo "Vui lòng kiểm tra log và Issue vừa được tạo để biết chi tiết." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Chi tiết:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workflow:** ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+      dong-goi-va-day-len-docker-hub:
     name: Đóng gói và Đẩy Docker Images lên Docker Hub
     needs: kiem-thu
     runs-on: ubuntu-latest
