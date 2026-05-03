@@ -41,7 +41,12 @@ jobs:
         id: unit_test
         run: |
           echo "Đang chạy Unit Tests..."
-          pytest --ignore=tests/test_order_flow.py > unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          echo "--- Testing Order Service ---"
+          cd order-service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd ..
+          echo "--- Testing Inventory Service ---"
+          cd inventory-service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd ..
 
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
         run: |
