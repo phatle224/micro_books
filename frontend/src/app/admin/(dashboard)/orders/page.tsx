@@ -2,18 +2,37 @@
 
 import { useState, useEffect } from "react";
 import { Clock, CheckCircle2, Truck, Package, PackageCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AdminOrders() {
+  const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = () => {
     setLoading(true);
-    fetch("http://localhost:3001/api/orders/")
-      .then(res => res.json())
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.push("/admin/login");
+      return;
+    }
+    fetch("http://localhost:3001/api/orders/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          router.push("/admin/login");
+          return null;
+        }
+        return res.json();
+      })
       .then(data => {
-        setOrders(data.orders || []);
-        setLoading(false);
+        if (data) {
+          setOrders(data.orders || []);
+          setLoading(false);
+        }
       });
   };
 
@@ -22,9 +41,17 @@ export default function AdminOrders() {
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.push("/admin/login");
+      return;
+    }
     await fetch(`http://localhost:3001/api/orders/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ status })
     });
     fetchOrders();

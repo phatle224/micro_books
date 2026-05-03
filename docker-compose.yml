@@ -33,6 +33,12 @@ services:
       MONGO_URI: ${MONGO_URI}
       KAFKA_BROKER: kafka:9092
       SERVICE_PORT: 3001
+      INVENTORY_SERVICE_URL: http://inventory-service:3002
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@microbooks.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ADMIN_NAME: ${ADMIN_NAME:-MicroBooks Admin}
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
     volumes:

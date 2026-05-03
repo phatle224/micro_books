@@ -14,17 +14,28 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    
-    // Simulate API call - Hardcoded admin credentials for demo
-    setTimeout(() => {
-      if (formData.email === "admin@microbooks.com" && formData.password === "admin123") {
-        localStorage.setItem("admin_auth", "true");
+
+    fetch("http://localhost:3001/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Invalid credentials.");
+        }
+        const data = await res.json();
+        if (data.user?.role !== "admin") {
+          throw new Error("Admin access required.");
+        }
+        localStorage.setItem("admin_token", data.access_token);
+        localStorage.setItem("admin_user", JSON.stringify(data.user));
         router.push("/admin");
-      } else {
-        setError("Invalid credentials. Try admin@microbooks.com / admin123");
+      })
+      .catch((err) => {
+        setError(err.message || "Login failed.");
         setLoading(false);
-      }
-    }, 1000);
+      });
   };
 
   return (

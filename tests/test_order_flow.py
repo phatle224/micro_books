@@ -4,6 +4,22 @@ import json
 
 ORDER_SERVICE_URL = "http://localhost:3001/api/orders"
 INVENTORY_SERVICE_URL = "http://localhost:3002/api/books"
+AUTH_SERVICE_URL = "http://localhost:3001/api/auth"
+
+
+def get_auth_token(email: str, password: str, name: str = "Test User") -> str:
+    register_payload = {"name": name, "email": email, "password": password}
+    register_res = requests.post(f"{AUTH_SERVICE_URL}/register", json=register_payload, timeout=5)
+
+    if register_res.status_code == 201:
+        return register_res.json().get("access_token", "")
+
+    login_payload = {"email": email, "password": password}
+    login_res = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_payload, timeout=5)
+    if login_res.status_code != 200:
+        raise RuntimeError(f"Auth failed: {login_res.text}")
+
+    return login_res.json().get("access_token", "")
 
 def test_order_and_inventory_flow():
     print("--- Bat dau test luong Order -> Kafka -> Inventory ---")
@@ -39,6 +55,11 @@ def test_order_and_inventory_flow():
 
     # 2. Tao don hang
     print("\n[2] Dang tao don hang moi...")
+    token = get_auth_token("tester@example.com", "test1234")
+    if not token:
+        print("FAILED: Khong nhan duoc token")
+        return
+
     order_data = {
         "customer_name": "Antigravity Tester",
         "customer_email": "tester@example.com",
@@ -55,7 +76,12 @@ def test_order_and_inventory_flow():
     }
     
     try:
-        order_res = requests.post(ORDER_SERVICE_URL, json=order_data, timeout=5)
+        order_res = requests.post(
+            ORDER_SERVICE_URL,
+            json=order_data,
+            timeout=5,
+            headers={"Authorization": f"Bearer {token}"},
+        )
     except Exception as e:
         print(f"FAILED: Khong the ket noi toi Order Service: {e}")
         return

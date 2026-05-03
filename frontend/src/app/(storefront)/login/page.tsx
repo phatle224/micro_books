@@ -1,25 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 
 export default function UserLogin() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      localStorage.setItem("user", JSON.stringify({ email: formData.email, role: "user" }));
+    const returnUrl = searchParams.get("returnUrl") || "/";
+
+    try {
+      const res = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        setError("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem("auth_token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("authUpdated"));
-      router.push("/");
-    }, 1000);
+      router.push(returnUrl);
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,6 +56,11 @@ export default function UserLogin() {
         <p className="text-gray-500 text-center text-sm mb-8">Enter your credentials to access your account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
             <input 

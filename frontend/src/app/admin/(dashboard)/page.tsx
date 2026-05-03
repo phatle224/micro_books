@@ -2,17 +2,35 @@
 
 import { useState, useEffect } from "react";
 import { DollarSign, ShoppingBag, Book, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [orderStats, setOrderStats] = useState<any>(null);
   const [inventoryStats, setInventoryStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) {
+      router.push("/admin/login");
+      return;
+    }
     Promise.all([
-      fetch("http://localhost:3001/api/orders/stats/summary").then(res => res.json()),
+      fetch("http://localhost:3001/api/orders/stats/summary", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(res => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          router.push("/admin/login");
+          return null;
+        }
+        return res.json();
+      }),
       fetch("http://localhost:3002/api/books/stats/summary").then(res => res.json())
     ]).then(([orders, inventory]) => {
+      if (!orders) return;
       setOrderStats(orders);
       setInventoryStats(inventory);
       setLoading(false);
@@ -20,7 +38,7 @@ export default function AdminDashboard() {
       console.error(err);
       setLoading(false);
     });
-  }, []);
+  }, [router]);
 
   if (loading) return <div>Loading dashboard...</div>;
 

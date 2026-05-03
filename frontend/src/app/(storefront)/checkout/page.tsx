@@ -9,6 +9,8 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     customer_name: "",
     customer_email: "",
@@ -24,6 +26,22 @@ export default function CheckoutPage() {
       console.error("Error parsing cart:", e);
       setCartItems([]);
     }
+
+    const storedUser = localStorage.getItem("user");
+    const authToken = localStorage.getItem("auth_token");
+    if (storedUser && authToken) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setToken(authToken);
+        setFormData((prev) => ({
+          ...prev,
+          customer_email: userData.email || prev.customer_email,
+          customer_name: userData.name || prev.customer_name,
+        }));
+      } catch (err) {
+        console.error("Error parsing user:", err);
+      }
+    }
   }, []);
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -31,8 +49,15 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
+
+    if (!token) {
+      const returnUrl = encodeURIComponent("/checkout");
+      router.push(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
     
     setLoading(true);
+    setError("");
     
     const orderData = {
       ...formData,
@@ -47,7 +72,10 @@ export default function CheckoutPage() {
     try {
       const res = await fetch("http://localhost:3001/api/orders/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(orderData)
       });
       
@@ -58,11 +86,20 @@ export default function CheckoutPage() {
         setTimeout(() => {
           router.push("/");
         }, 3000);
+      } else if (res.status === 401) {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("authUpdated"));
+        const returnUrl = encodeURIComponent("/checkout");
+        router.push(`/login?returnUrl=${returnUrl}`);
+      } else if (res.status === 409) {
+        const data = await res.json();
+        setError(data?.detail?.message || "Some items are out of stock.");
       } else {
-        alert("Failed to place order.");
+        setError("Failed to place order.");
       }
     } catch (err) {
-      alert("Network error.");
+      setError("Network error.");
     } finally {
       setLoading(false);
     }
@@ -89,12 +126,18 @@ export default function CheckoutPage() {
         <div>
           <h2 className="text-xl font-semibold mb-6">Shipping Information</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input 
                 required 
                 type="text" 
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
+                value={formData.customer_name}
                 onChange={e => setFormData({...formData, customer_name: e.target.value})}
               />
             </div>
@@ -104,6 +147,7 @@ export default function CheckoutPage() {
                 required 
                 type="email" 
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
+                value={formData.customer_email}
                 onChange={e => setFormData({...formData, customer_email: e.target.value})}
               />
             </div>
@@ -112,6 +156,7 @@ export default function CheckoutPage() {
               <input 
                 type="tel" 
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
+                value={formData.customer_phone}
                 onChange={e => setFormData({...formData, customer_phone: e.target.value})}
               />
             </div>
@@ -121,6 +166,7 @@ export default function CheckoutPage() {
                 required 
                 rows={3}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-1 focus:ring-black focus:border-black outline-none transition-colors"
+                value={formData.customer_address}
                 onChange={e => setFormData({...formData, customer_address: e.target.value})}
               />
             </div>

@@ -14,15 +14,28 @@ export default function AdminLayout({
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem("admin_auth") !== "true") {
+    const token = localStorage.getItem("admin_token");
+    const user = localStorage.getItem("admin_user");
+    if (!token || !user) {
       router.push("/admin/login");
-    } else {
-      setAuthorized(true);
+      return;
     }
+    try {
+      const userData = JSON.parse(user);
+      if (userData.role !== "admin") {
+        router.push("/admin/login");
+        return;
+      }
+    } catch (err) {
+      router.push("/admin/login");
+      return;
+    }
+    setAuthorized(true);
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_auth");
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_user");
     router.push("/admin/login");
   };
 

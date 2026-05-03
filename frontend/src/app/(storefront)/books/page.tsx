@@ -44,13 +44,21 @@ export default function BooksPage() {
 
       const existingItem = currentCart.find((item: any) => item.book_id === book._id);
       if (existingItem) {
-        existingItem.quantity += 1;
+        const nextQuantity = existingItem.quantity + 1;
+        if (book.stock > 0 && nextQuantity > book.stock) {
+          existingItem.quantity = book.stock;
+          alert(`Only ${book.stock} item(s) left in stock.`);
+        } else {
+          existingItem.quantity = nextQuantity;
+        }
+        existingItem.stock = book.stock;
       } else {
         currentCart.push({
           book_id: book._id,
           title: book.title,
           price: book.price,
           quantity: 1,
+          stock: book.stock,
           image_url: book.image_url
         });
       }

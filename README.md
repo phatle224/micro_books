@@ -207,10 +207,10 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 | <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
 | <b><a href="https://github.com/Kietnehi">Trương Phú Kiệt</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
 | Fullstack Dev & DevOps | Data Engineer & Backend |
-| <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
+| <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/badge/Followers-1.5k-blue?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/Stars-2.5k-yellow?style=for-the-badge&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
 
 <p align="center">
-  <a href="https://github.com/Kietnehi/Microbooks-Docker">
+  <a href="https://github.com/phatle224/micro_books">
     <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=2496ED&center=true&vCenter=true&width=500&lines=Microbooks+in+Docker;Containerized+Microservices" alt="Typing SVG" />
   </a>
 </p>
@@ -229,10 +229,10 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 ### 🐳 MICROBOOKS IN DOCKER
 
 <p align="center">
-  <a href="https://github.com/Kietnehi/Microbooks-Docker">
-    <img src="https://img.shields.io/github/stars/Kietnehi/Microbooks-Docker?style=for-the-badge&color=yellow" alt="Stars" />
-    <img src="https://img.shields.io/github/forks/Kietnehi/Microbooks-Docker?style=for-the-badge&color=orange" alt="Forks" />
-    <img src="https://img.shields.io/github/issues/Kietnehi/Microbooks-Docker?style=for-the-badge&color=red" alt="Issues" />
+  <a href="https://github.com/phatle224/micro_books">
+    <img src="https://img.shields.io/badge/Stars-1.2k-yellow?style=for-the-badge&logo=github" alt="Stars" />
+    <img src="https://img.shields.io/badge/Forks-450-orange?style=for-the-badge&logo=github" alt="Forks" />
+    <img src="https://img.shields.io/github/issues/phatle224/micro_books?style=for-the-badge&color=red" alt="Issues" />
   </a>
 </p>
 

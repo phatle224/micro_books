@@ -12,7 +12,8 @@ export default function UserMenu() {
   useEffect(() => {
     const checkAuth = () => {
       const storedUser = localStorage.getItem("user");
-      if (storedUser) {
+      const token = localStorage.getItem("auth_token");
+      if (storedUser && token) {
         setUser(JSON.parse(storedUser));
       } else {
         setUser(null);
@@ -26,6 +27,7 @@ export default function UserMenu() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("auth_token");
     window.dispatchEvent(new Event("authUpdated"));
     router.push("/login");
   };

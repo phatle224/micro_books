@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
 from datetime import datetime, timezone
-from .models import BookCreate, BookUpdate
+from .models import BookCreate, BookUpdate, BookValidationRequest
 
 router = APIRouter(prefix="/api/books", tags=["Books"])
 
@@ -58,6 +58,48 @@ async def list_categories():
     db = get_db()
     categories = await db.books.distinct("category")
     return {"categories": [c for c in categories if c]}
+
+
+@router.post("/validate-batch")
+async def validate_batch(request: BookValidationRequest):
+    """Validate stock availability and pricing for a batch of items."""
+    db = get_db()
+    results = []
+    all_available = True
+
+    for item in request.items:
+        try:
+            book = await db.books.find_one({"_id": ObjectId(item.book_id)})
+        except Exception:
+            book = None
+
+        if not book:
+            results.append({
+                "book_id": item.book_id,
+                "title": "",
+                "price": 0,
+                "stock": 0,
+                "requested": item.quantity,
+                "available": False,
+            })
+            all_available = False
+            continue
+
+        stock = book.get("stock", 0)
+        available = item.quantity > 0 and stock >= item.quantity
+        if not available:
+            all_available = False
+
+        results.append({
+            "book_id": str(book.get("_id")),
+            "title": book.get("title", ""),
+            "price": book.get("price", 0),
+            "stock": stock,
+            "requested": item.quantity,
+            "available": available,
+        })
+
+    return {"available": all_available, "items": results}
 
 
 @router.get("/{book_id}")

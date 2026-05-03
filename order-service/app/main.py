@@ -1,12 +1,15 @@
 import os
 import asyncio
 import logging
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from .routes import router
+from .auth_routes import router as auth_router
 from .kafka_producer import close_producer
+from .auth import hash_password
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +30,23 @@ async def lifespan(app: FastAPI):
     import app.main as main_module
     main_module.db = db_instance
     logger.info("Connected to MongoDB (microbooks_orders)")
+
+    admin_email = os.getenv("ADMIN_EMAIL")
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    admin_name = os.getenv("ADMIN_NAME", "Admin")
+    if admin_email and admin_password:
+        existing_admin = await db_instance.users.find_one({"email": admin_email.lower()})
+        if not existing_admin:
+            now = datetime.now(timezone.utc).isoformat()
+            await db_instance.users.insert_one({
+                "name": admin_name,
+                "email": admin_email.lower(),
+                "password_hash": hash_password(admin_password),
+                "role": "admin",
+                "created_at": now,
+                "updated_at": now,
+            })
+            logger.info("Seeded admin user")
 
     # Start Kafka Consumer in background
     from .kafka_consumer import consume_order_updates
@@ -56,6 +76,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router)
 
 
 @app.get("/health")

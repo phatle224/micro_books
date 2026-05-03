@@ -22,18 +22,38 @@ export default function UserOrdersPage() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("auth_token");
     if (!storedUser) {
-      router.push("/login");
+      router.push("/login?returnUrl=/orders");
+      return;
+    }
+    if (!token) {
+      router.push("/login?returnUrl=/orders");
       return;
     }
     const userData = JSON.parse(storedUser);
     setUser(userData);
 
-    fetch(`http://localhost:3001/api/orders/?email=${userData.email}`)
-      .then(res => res.json())
+    fetch("http://localhost:3001/api/orders/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (res.status === 401) {
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("user");
+          window.dispatchEvent(new Event("authUpdated"));
+          router.push("/login?returnUrl=/orders");
+          return null;
+        }
+        return res.json();
+      })
       .then(data => {
-        setOrders(data.orders || []);
-        setLoading(false);
+        if (data) {
+          setOrders(data.orders || []);
+          setLoading(false);
+        }
       })
       .catch(err => {
         console.error(err);

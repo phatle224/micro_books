@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 
 class BookCreate(BaseModel):
@@ -39,3 +39,21 @@ class BookResponse(BaseModel):
 
     class Config:
         populate_by_name = True
+
+
+class BookValidationItem(BaseModel):
+    book_id: str
+    quantity: int
+
+
+class BookValidationRequest(BaseModel):
+    items: List[BookValidationItem]
+
+
+class BookValidationResult(BaseModel):
+    book_id: str
+    title: str
+    price: float
+    stock: int
+    requested: int
+    available: bool

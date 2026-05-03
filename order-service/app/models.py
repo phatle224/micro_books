@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
 from enum import Enum
 
 
@@ -10,6 +9,11 @@ class OrderStatus(str, Enum):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
+
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
 
 
 class OrderItem(BaseModel):
@@ -31,6 +35,27 @@ class OrderUpdate(BaseModel):
     status: Optional[OrderStatus] = None
 
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class UserPublic(BaseModel):
+    id: str = Field(alias="_id")
+    name: str
+    email: str
+    role: UserRole
+
+    class Config:
+        populate_by_name = True
+
+
 class OrderResponse(BaseModel):
     id: str = Field(alias="_id")
     customer_name: str
@@ -40,6 +65,7 @@ class OrderResponse(BaseModel):
     items: List[OrderItem]
     total_amount: float
     status: OrderStatus
+    user_id: Optional[str] = None
     created_at: str
     updated_at: str
 
