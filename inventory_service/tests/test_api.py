@@ -24,12 +24,11 @@ def test_health_check():
 def test_validate_batch_success(mock_db):
     # Setup mock behavior for find_one
     def mock_find_one(query):
-        book_id = query.get("_id")
-        # In reality query is {"_id": ObjectId("...")}
-        if "book1" in str(book_id):
-            return {"_id": "book1", "title": "Book 1", "price": 10.0, "stock": 10}
-        if "book2" in str(book_id):
-            return {"_id": "book2", "title": "Book 2", "price": 20.0, "stock": 2}
+        book_id = str(query.get("_id"))
+        if "507f1f77bcf86cd799439011" in book_id:
+            return {"_id": "507f1f77bcf86cd799439011", "title": "Book 1", "price": 10.0, "stock": 10}
+        if "507f1f77bcf86cd799439012" in book_id:
+            return {"_id": "507f1f77bcf86cd799439012", "title": "Book 2", "price": 20.0, "stock": 2}
         return None
 
     mock_db.books.find_one = AsyncMock(side_effect=mock_find_one)
@@ -53,7 +52,7 @@ def test_validate_batch_success(mock_db):
 
 def test_validate_batch_insufficient_stock(mock_db):
     # Setup mock behavior for find_one
-    mock_db.books.find_one = AsyncMock(return_value={"_id": "book1", "title": "Book 1", "price": 10.0, "stock": 1})
+    mock_db.books.find_one = AsyncMock(return_value={"_id": "507f1f77bcf86cd799439011", "title": "Book 1", "price": 10.0, "stock": 1})
     
     payload = {
         "items": [
