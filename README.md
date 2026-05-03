@@ -194,7 +194,6 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 
 > Kafka UI được nhúng trực tiếp vào trang Admin tại `/admin/kafka` và cũng có thể mở riêng tại `http://localhost:8080`.
 
-
 ## 🔗 Các tác giả & Tài khoản Github
 
 <p align="center">
@@ -205,7 +204,7 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 | :---: | :---: |
 | <a href="https://github.com/Kietnehi"><img src="https://github-readme-stats.vercel.app/api?username=Kietnehi&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> | <a href="https://github.com/phatle224"><img src="https://github-readme-stats.vercel.app/api?username=phatle224&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> |
 | <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
-| <b><a href="https://github.com/Kietnehi">Trương Phú Kiệt</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
+| <b><a href="https://github.com/Kietnehi">Kiet Phu</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
 | Fullstack Dev & DevOps | Data Engineer & Backend |
 | <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/badge/Followers-1.5k-blue?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/Stars-2.5k-yellow?style=for-the-badge&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
 
@@ -230,15 +229,15 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 
 <p align="center">
   <a href="https://github.com/phatle224/micro_books">
-    <img src="https://img.shields.io/badge/Stars-1.2k-yellow?style=for-the-badge&logo=github" alt="Stars" />
-    <img src="https://img.shields.io/badge/Forks-450-orange?style=for-the-badge&logo=github" alt="Forks" />
+    <img src="https://img.shields.io/github/stars/phatle224/micro_books?style=for-the-badge&logo=github&color=yellow" alt="Stars" />
+    <img src="https://img.shields.io/github/forks/phatle224/micro_books?style=for-the-badge&logo=github&color=orange" alt="Forks" />
     <img src="https://img.shields.io/github/issues/phatle224/micro_books?style=for-the-badge&color=red" alt="Issues" />
   </a>
 </p>
 
 <!-- Quote động -->
 <p align="center">
-  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark" alt="Daily Quote"/>
+  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=light" alt="Daily Quote"/>
 </p>
 
 <p align="center">
