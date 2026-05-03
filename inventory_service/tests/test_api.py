@@ -1,7 +1,11 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
-from app.main import app
+
+# Mock MongoDB before importing app to avoid connection errors in lifespan
+with patch("motor.motor_asyncio.AsyncIOMotorClient") as mock_motor:
+    mock_motor.return_value = MagicMock()
+    from app.main import app
 
 client = TestClient(app)
 

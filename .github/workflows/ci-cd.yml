@@ -41,12 +41,20 @@ jobs:
         id: unit_test
         run: |
           echo "Đang chạy Unit Tests..."
+          UNIT_FAIL_LOCAL=false
           echo "--- Testing Order Service ---"
-          cd order_service && python -m pytest tests > ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd order_service && python -m pytest tests > ../unit_test_report.txt 2>&1 || UNIT_FAIL_LOCAL=true
           cd ..
           echo "--- Testing Inventory Service ---"
-          cd inventory_service && python -m pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd inventory_service && python -m pytest tests >> ../unit_test_report.txt 2>&1 || UNIT_FAIL_LOCAL=true
           cd ..
+          
+          if [ -f unit_test_report.txt ]; then cat unit_test_report.txt; fi
+          
+          if [ "$UNIT_FAIL_LOCAL" = "true" ]; then
+            echo "UNIT_FAIL=true" >> $GITHUB_ENV
+            exit 1
+          fi
 
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
         run: |
