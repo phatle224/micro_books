@@ -133,7 +133,7 @@ jobs:
 | :--- | :--- |
 | **Công việc (Job)** | \`${context.job}\` |
 | **Người thực hiện** | @${context.actor} |
-| **Nhánh (Branch)** | \`${{ github.ref_name }}\` |
+| **Nhánh (Branch)** | \`${{ '{{' }} github.ref_name }}\` |
 | **Commit cuối** | \`${commitMessage}\` |
 | **Trạng thái** | ❌ Thất bại |
 
@@ -245,7 +245,7 @@ ${errorDetails}
 | :--- | :--- |
 | **Công việc (Job)** | \`${context.job}\` |
 | **Người thực hiện** | @${context.actor} |
-| **Nhánh (Branch)** | \`${{ github.ref_name }}\` |
+| **Nhánh (Branch)** | \`${{ '{{' }} github.ref_name }}\` |
 | **Commit cuối** | \`${commitMessage}\` |
 
 ---
