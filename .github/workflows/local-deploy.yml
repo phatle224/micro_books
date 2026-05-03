@@ -17,6 +17,19 @@ jobs:
       - name: Tải mã nguồn mới nhất
         uses: actions/checkout@v4
 
+      - name: Khôi phục file .env
+        shell: powershell
+        run: |
+          $src = "C:\Users\ADMIN\Desktop\micro_books\.env"
+          $dst = "${{ github.workspace }}\.env"
+          if (Test-Path $src) {
+            Copy-Item $src -Destination $dst -Force
+            Write-Host ".env restored successfully."
+          } else {
+            Write-Error ".env not found at $src — deploy aborted."
+            exit 1
+          }
+
       - name: Cập nhật và Khởi động lại các Service
         run: |
           docker-compose down
