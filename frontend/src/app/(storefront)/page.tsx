@@ -96,12 +96,12 @@ export default function Home() {
       </div>
 
       {/* New Arrivals Banner */}
-      <div 
+      <div
         className="mb-32 rounded-[3rem] overflow-hidden relative bg-slate-950 text-white text-left p-16 md:p-24 flex items-center animate-fade-in-up shadow-2xl"
       >
         <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_50%,#c2410c,transparent_50%)]"></div>
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-        
+
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 mb-6">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400">Exclusive Collection</span>
@@ -116,7 +116,7 @@ export default function Home() {
             Explore New Arrivals <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
-        
+
         {/* Abstract Book Graphic Overlay */}
         <div className="hidden lg:block absolute right-[-5%] top-1/2 -translate-y-1/2 opacity-20 rotate-[-15deg]">
           <BookOpen className="w-[400px] h-[400px] text-white" strokeWidth={0.5} />

@@ -242,7 +242,7 @@ Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** �
 </p>
 
 <p align="center">
-  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful.</i>
+  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
 </p>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/>
