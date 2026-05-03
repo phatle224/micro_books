@@ -17,7 +17,13 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"));
+    try {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCartItems(Array.isArray(cart) ? cart : []);
+    } catch (e) {
+      console.error("Error parsing cart:", e);
+      setCartItems([]);
+    }
   }, []);
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -48,6 +54,7 @@ export default function CheckoutPage() {
       if (res.ok) {
         setSuccess(true);
         localStorage.removeItem("cart");
+        window.dispatchEvent(new Event("cartUpdated"));
         setTimeout(() => {
           router.push("/");
         }, 3000);

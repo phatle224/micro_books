@@ -9,7 +9,13 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setCartItems(JSON.parse(localStorage.getItem("cart") || "[]"));
+    try {
+      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCartItems(Array.isArray(cart) ? cart : []);
+    } catch (e) {
+      console.error("Error parsing cart:", e);
+      setCartItems([]);
+    }
     setMounted(true);
   }, []);
 

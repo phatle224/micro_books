@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import Link from "next/link";
 import CartButton from "../../components/storefront/CartButton";
+import UserMenu from "../../components/storefront/UserMenu";
 
 export default function StorefrontLayout({
   children,
@@ -27,10 +28,8 @@ export default function StorefrontLayout({
           </Link>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="text-sm text-gray-700 hover:text-black font-medium transition-colors hidden sm:block">
-            Admin
-          </Link>
+        <div className="flex items-center gap-4 md:gap-6">
+          <UserMenu />
           <CartButton />
         </div>
       </nav>

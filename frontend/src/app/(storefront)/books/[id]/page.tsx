@@ -37,23 +37,34 @@ export default function BookDetailsPage() {
 
   const addToCart = () => {
     if (!book) return;
-    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existingItem = currentCart.find((item: any) => item.book_id === book._id);
-    if (existingItem) {
-      existingItem.quantity += 1;
-    } else {
-      currentCart.push({
-        book_id: book._id,
-        title: book.title,
-        price: book.price,
-        quantity: 1,
-        image_url: book.image_url
-      });
+    try {
+      const storedCart = localStorage.getItem("cart");
+      let currentCart = JSON.parse(storedCart || "[]");
+      
+      if (!Array.isArray(currentCart)) {
+        currentCart = [];
+      }
+
+      const existingItem = currentCart.find((item: any) => item.book_id === book._id);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        currentCart.push({
+          book_id: book._id,
+          title: book.title,
+          price: book.price,
+          quantity: 1,
+          image_url: book.image_url
+        });
+      }
+      localStorage.setItem("cart", JSON.stringify(currentCart));
+      // Dispatch custom event to update cart badge in Navbar
+      window.dispatchEvent(new Event("cartUpdated"));
+      alert(`${book.title} added to cart!`);
+    } catch (err) {
+      console.error("Error updating cart:", err);
+      localStorage.setItem("cart", "[]");
     }
-    localStorage.setItem("cart", JSON.stringify(currentCart));
-    // Dispatch custom event to update cart badge in Navbar
-    window.dispatchEvent(new Event("cartUpdated"));
-    alert(`${book.title} added to cart!`);
   };
 
   if (loading) {

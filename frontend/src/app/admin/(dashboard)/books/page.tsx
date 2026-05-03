@@ -100,36 +100,46 @@ export default function AdminBooks() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-overlay">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md animate-slide-up-overlay">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Add New Book</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black"><X className="w-5 h-5" /></button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in-overlay">
+          <div className="bg-white rounded-[32px] p-8 md:p-10 w-full max-w-lg animate-slide-up-overlay shadow-2xl border border-gray-100">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Add New Book</h2>
+                <p className="text-sm text-gray-500 mt-1">Fill in the details to expand the library.</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input required type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Author</label>
-                <input required type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price ($)</label>
-                  <input required type="number" step="0.01" className="w-full border border-gray-300 rounded-lg px-3 py-2" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Title</label>
+                  <input required type="text" placeholder="e.g. The Great Gatsby" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Stock</label>
-                  <input required type="number" className="w-full border border-gray-300 rounded-lg px-3 py-2" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Author</label>
+                  <input required type="text" placeholder="e.g. F. Scott Fitzgerald" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Price ($)</label>
+                    <input required type="number" step="0.01" placeholder="29.99" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Stock</label>
+                    <input required type="number" placeholder="100" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Category</label>
+                  <input required type="text" placeholder="e.g. Classic, Fiction" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
-                <input required type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
-              </div>
-              <button type="submit" className="w-full bg-black text-white py-2.5 rounded-lg font-medium mt-6">Save Book</button>
+              <button type="submit" className="w-full bg-black text-white py-4 rounded-2xl font-semibold shadow-lg shadow-black/10 hover:shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4">
+                Save to Inventory
+              </button>
             </form>
           </div>
         </div>

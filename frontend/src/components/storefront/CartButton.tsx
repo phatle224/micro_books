@@ -9,9 +9,17 @@ export default function CartButton() {
 
   useEffect(() => {
     const updateCartCount = () => {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      const count = cart.reduce((total: number, item: any) => total + item.quantity, 0);
-      setItemCount(count);
+      try {
+        const storedCart = localStorage.getItem("cart");
+        const cart = JSON.parse(storedCart || "[]");
+        const count = Array.isArray(cart) 
+          ? cart.reduce((total: number, item: any) => total + (item.quantity || 0), 0)
+          : 0;
+        setItemCount(count);
+      } catch (error) {
+        console.error("Error parsing cart from localStorage:", error);
+        setItemCount(0);
+      }
     };
 
     updateCartCount();

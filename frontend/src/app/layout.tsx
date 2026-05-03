@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: "Stellar.ai | Work Smarter. Move Faster.",
-  description: "Intelligent automation syncs with the tools you love to streamline tasks, boost output, and save time.",
+  title: "MicroBooks | Premium E-commerce Bookstore",
+  description: "Explore thousands of titles across all genres. Carefully curated collections delivered right to your door.",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} font-sans antialiased bg-white text-black`}
       >

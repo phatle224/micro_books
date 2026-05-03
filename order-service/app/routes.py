@@ -46,12 +46,14 @@ async def create_order(order: OrderCreate):
 
 
 @router.get("/")
-async def list_orders(status: str = None, limit: int = 50, skip: int = 0):
-    """List all orders (Admin). Optionally filter by status."""
+async def list_orders(status: str = None, email: str = None, limit: int = 50, skip: int = 0):
+    """List orders. Optionally filter by status or customer email."""
     db = get_db()
     query = {}
     if status:
         query["status"] = status
+    if email:
+        query["customer_email"] = email
 
     cursor = db.orders.find(query).sort("created_at", -1).skip(skip).limit(limit)
     orders = []

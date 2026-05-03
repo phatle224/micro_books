@@ -1,11 +1,33 @@
+"use client";
+
 import Link from "next/link";
-import { LayoutDashboard, Book, ShoppingBag, Settings, LogOut, Star } from "lucide-react";
+import { LayoutDashboard, Book, ShoppingBag, LogOut, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("admin_auth") !== "true") {
+      router.push("/admin/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_auth");
+    router.push("/admin/login");
+  };
+
+  if (!authorized) return null; // Prevent flash of content
+
   return (
     <div className="flex h-screen bg-gray-50 text-black">
       {/* Sidebar */}
@@ -29,9 +51,12 @@ export default function AdminLayout({
           </Link>
         </nav>
         
-        <div className="p-4 border-t border-gray-200">
-          <Link href="/" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-black transition-colors">
-            <LogOut className="w-5 h-5" /> Back to Store
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors">
+            <LogOut className="w-5 h-5" /> Logout
+          </button>
+          <Link href="/" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-500 hover:bg-gray-100 hover:text-black transition-colors">
+            ← Storefront
           </Link>
         </div>
       </aside>
