@@ -150,5 +150,5 @@ npm run dev
 4. Inventory Service tự động trừ tồn kho trong MongoDB
 
 ## 👥 Team
-
+- Lê Hồng Phát
 - Trương Quốc Kiệt

@@ -7,6 +7,7 @@ export default function AdminBooks() {
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: "", author: "", price: "", stock: "", category: "" });
 
   const fetchBooks = () => {
@@ -23,6 +24,18 @@ export default function AdminBooks() {
     fetchBooks();
   }, []);
 
+  const handleEdit = (book: any) => {
+    setEditingId(book._id);
+    setFormData({
+      title: book.title,
+      author: book.author,
+      price: book.price.toString(),
+      stock: book.stock.toString(),
+      category: book.category || ""
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -31,13 +44,20 @@ export default function AdminBooks() {
       stock: parseInt(formData.stock, 10)
     };
 
-    await fetch("http://localhost:3002/api/books/", {
-      method: "POST",
+    const url = editingId 
+      ? `http://localhost:3002/api/books/${editingId}`
+      : "http://localhost:3002/api/books/";
+    
+    const method = editingId ? "PUT" : "POST";
+
+    await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     
     setIsModalOpen(false);
+    setEditingId(null);
     setFormData({ title: "", author: "", price: "", stock: "", category: "" });
     fetchBooks();
   };
@@ -54,7 +74,11 @@ export default function AdminBooks() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-semibold">Manage Inventory</h1>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ title: "", author: "", price: "", stock: "", category: "" });
+            setIsModalOpen(true);
+          }}
           className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Add Book
@@ -89,7 +113,7 @@ export default function AdminBooks() {
                     </span>
                   </td>
                   <td className="px-6 py-4 flex items-center justify-end gap-3">
-                    <button className="text-gray-400 hover:text-black transition-colors"><Edit2 className="w-4 h-4" /></button>
+                    <button onClick={() => handleEdit(book)} className="text-gray-400 hover:text-black transition-colors"><Edit2 className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(book._id)} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
@@ -100,45 +124,42 @@ export default function AdminBooks() {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in-overlay">
-          <div className="bg-white rounded-[32px] p-8 md:p-10 w-full max-w-lg animate-slide-up-overlay shadow-2xl border border-gray-100">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Add New Book</h2>
-                <p className="text-sm text-gray-500 mt-1">Fill in the details to expand the library.</p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all">
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in-overlay">
+          <div className="bg-white border border-gray-200 rounded-[24px] p-8 w-full max-w-lg shadow-xl animate-slide-up-overlay">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold tracking-tight">{editingId ? "Edit Book" : "Add New Book"}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-black transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Title</label>
-                  <input required type="text" placeholder="e.g. The Great Gatsby" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Title</label>
+                  <input required type="text" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Author</label>
-                  <input required type="text" placeholder="e.g. F. Scott Fitzgerald" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Author</label>
+                  <input required type="text" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Price ($)</label>
-                    <input required type="number" step="0.01" placeholder="29.99" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Price ($)</label>
+                    <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Stock</label>
-                    <input required type="number" placeholder="100" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                    <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Stock</label>
+                    <input required type="number" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Category</label>
-                  <input required type="text" placeholder="e.g. Classic, Fiction" className="w-full bg-gray-50 border-none rounded-2xl px-4 py-3.5 focus:ring-2 focus:ring-black outline-none transition-all placeholder:text-gray-300" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Category</label>
+                  <input required type="text" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                 </div>
               </div>
-              <button type="submit" className="w-full bg-black text-white py-4 rounded-2xl font-semibold shadow-lg shadow-black/10 hover:shadow-black/20 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4">
-                Save to Inventory
+              <button type="submit" className="w-full bg-black text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors mt-2">
+                Save Book
               </button>
             </form>
           </div>
