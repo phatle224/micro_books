@@ -54,6 +54,7 @@ app = FastAPI(
     description="Book inventory management service for MicroBooks e-commerce bookstore",
     version="1.0.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(
