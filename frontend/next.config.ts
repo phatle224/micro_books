@@ -7,12 +7,24 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/auth",
+        destination: `${orderServiceUrl}/api/auth`,
+      },
+      {
         source: "/api/auth/:path*",
         destination: `${orderServiceUrl}/api/auth/:path*`,
       },
       {
+        source: "/api/orders",
+        destination: `${orderServiceUrl}/api/orders`,
+      },
+      {
         source: "/api/orders/:path*",
         destination: `${orderServiceUrl}/api/orders/:path*`,
+      },
+      {
+        source: "/api/books",
+        destination: `${inventoryServiceUrl}/api/books`,
       },
       {
         source: "/api/books/:path*",
