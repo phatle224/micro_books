@@ -120,7 +120,9 @@ export default function BookDetailsPage() {
   const addToCart = () => {
     if (!book) return;
     try {
-      const storedCart = localStorage.getItem("cart");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+      const storedCart = localStorage.getItem(cartKey);
       let currentCart = JSON.parse(storedCart || "[]");
       if (!Array.isArray(currentCart)) currentCart = [];
 
@@ -151,14 +153,13 @@ export default function BookDetailsPage() {
         });
         showToast("Đã thêm vào giỏ hàng!", "success");
       }
-      localStorage.setItem("cart", JSON.stringify(currentCart));
+      localStorage.setItem(cartKey, JSON.stringify(currentCart));
       window.dispatchEvent(new Event("cartUpdated"));
 
       setAdded(true);
       setTimeout(() => setAdded(false), 2500);
     } catch (err) {
       console.error("Error updating cart:", err);
-      localStorage.setItem("cart", "[]");
     }
   };
 

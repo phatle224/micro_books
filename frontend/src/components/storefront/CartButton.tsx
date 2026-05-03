@@ -10,7 +10,9 @@ export default function CartButton() {
   useEffect(() => {
     const updateCartCount = () => {
       try {
-        const storedCart = localStorage.getItem("cart");
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+        const storedCart = localStorage.getItem(cartKey);
         const cart = JSON.parse(storedCart || "[]");
         const count = Array.isArray(cart) 
           ? cart.reduce((total: number, item: any) => total + (item.quantity || 0), 0)
@@ -24,14 +26,14 @@ export default function CartButton() {
 
     updateCartCount();
 
-    // Custom event listener for when cart updates
+    // Listen for both cart and auth updates
     window.addEventListener("cartUpdated", updateCartCount);
-    
-    // Fallback for storage event (from other tabs)
+    window.addEventListener("authUpdated", updateCartCount);
     window.addEventListener("storage", updateCartCount);
 
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
+      window.removeEventListener("authUpdated", updateCartCount);
       window.removeEventListener("storage", updateCartCount);
     };
   }, []);

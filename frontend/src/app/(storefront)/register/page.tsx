@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 export default function UserRegister() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
@@ -34,6 +36,7 @@ export default function UserRegister() {
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("authUpdated"));
+      showToast("Registration successful! Welcome to MicroBooks.", "success");
       router.push("/");
     } catch (err) {
       setError("Network error. Please try again.");

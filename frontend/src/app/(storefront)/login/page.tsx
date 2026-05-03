@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 export default function UserLogin() {
   const router = useRouter();
+  const { showToast } = useToast();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -35,6 +37,7 @@ export default function UserLogin() {
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("authUpdated"));
+      showToast("Welcome back!", "success");
       router.push(returnUrl);
     } catch (err) {
       setError("Network error. Please try again.");

@@ -20,7 +20,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     try {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+      const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+      const cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
       setCartItems(Array.isArray(cart) ? cart : []);
     } catch (e) {
       console.error("Error parsing cart:", e);
@@ -81,7 +84,10 @@ export default function CheckoutPage() {
       
       if (res.ok) {
         setSuccess(true);
-        localStorage.removeItem("cart");
+        const userStr = localStorage.getItem("user");
+        const user = userStr ? JSON.parse(userStr) : null;
+        const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+        localStorage.removeItem(cartKey);
         window.dispatchEvent(new Event("cartUpdated"));
         setTimeout(() => {
           router.push("/");

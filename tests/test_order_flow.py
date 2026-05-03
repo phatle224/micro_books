@@ -8,23 +8,23 @@ AUTH_SERVICE_URL = "http://localhost:3001/api/auth"
 
 
 def get_auth_token(email: str, password: str, name: str = "Test User") -> str:
-    # Thu lai nhieu lan vi trong CI dich vu co the khoi dong cham
+    # Thử lại nhiều lần vì trong CI dịch vụ có thể khởi động chậm
     for attempt in range(5):
         try:
-            # 1. Thu dang ky truoc
+            # 1. Thử đăng ký trước
             register_payload = {"name": name, "email": email, "password": password}
             register_res = requests.post(f"{AUTH_SERVICE_URL}/register", json=register_payload, timeout=5)
             
             if register_res.status_code == 201:
-                print(f"DEBUG: Dang ky tai khoan moi thanh cong ({email})")
+                print(f"DEBUG: Đăng ký tài khoản mới thành công ({email})")
                 return register_res.json().get("access_token", "")
             
-            # 2. Neu dang ky bao loi (co the do ton tai roi), thu dang nhap
+            # 2. Nếu đăng ký báo lỗi (có thể do tồn tại rồi), thử đăng nhập
             login_payload = {"email": email, "password": password}
             login_res = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_payload, timeout=5)
             
             if login_res.status_code == 200:
-                print(f"DEBUG: Dang nhap thanh cong ({email})")
+                print(f"DEBUG: Đăng nhập thành công ({email})")
                 return login_res.json().get("access_token", "")
             
             print(f"DEBUG: Attempt {attempt+1} - Register status: {register_res.status_code}, Login status: {login_res.status_code}")
@@ -32,47 +32,47 @@ def get_auth_token(email: str, password: str, name: str = "Test User") -> str:
         except Exception as e:
             print(f"DEBUG: Attempt {attempt+1} - Connection failed: {e}")
         
-        time.sleep(2) # Doi 2 giay truoc khi thu lai
+        time.sleep(2) # Đợi 2 giây trước khi thử lại
 
     raise RuntimeError(f"Auth failed after 5 attempts for {email}")
 
 def test_order_and_inventory_flow():
-    print("--- Bat dau test luong Order -> Kafka -> Inventory ---")
+    print("--- Bắt đầu test luồng Order -> Kafka -> Inventory ---")
 
-    # 1. Lay danh sach sach de chon 1 cuon test
-    print("\n[1] Lay danh sach sach tu Inventory...")
+    # 1. Lấy danh sách sách để chọn 1 cuốn test
+    print("\n[1] Lấy danh sách sách từ Inventory...")
     try:
         books_res = requests.get(INVENTORY_SERVICE_URL, timeout=5)
     except Exception as e:
-        print(f"FAILED: Khong the ket noi toi Inventory Service: {e}")
+        print(f"FAILED: Không thể kết nối tới Inventory Service: {e}")
         return
 
     if books_res.status_code != 200:
-        print(f"FAILED: Inventory Service tra ve loi {books_res.status_code}")
+        print(f"FAILED: Inventory Service trả về lỗi {books_res.status_code}")
         return
 
     books = books_res.json().get("books", [])
     if not books:
-        print("FAILED: Khong co sach nao trong kho de test")
+        print("FAILED: Không có sách nào trong kho để test")
         return
 
-    # Tim cuon sach con hang (stock > 0)
+    # Tìm cuốn sách còn hàng (stock > 0)
     test_book = next((b for b in books if b["stock"] > 0), None)
     
     if not test_book:
-        print("FAILED: Tat ca sach deu het hang!")
+        print("FAILED: Tất cả sách đều hết hàng!")
         return
 
     book_id = test_book["_id"]
     initial_stock = test_book["stock"]
-    print(f"Chon sach: {test_book['title']} (ID: {book_id})")
-    print(f"Ton kho hien tai: {initial_stock}")
+    print(f"Chọn sách: {test_book['title']} (ID: {book_id})")
+    print(f"Tồn kho hiện tại: {initial_stock}")
 
-    # 2. Tao don hang
-    print("\n[2] Dang tao don hang moi...")
+    # 2. Tạo đơn hàng
+    print("\n[2] Đang tạo đơn hàng mới...")
     token = get_auth_token("tester@example.com", "test1234")
     if not token:
-        print("FAILED: Khong nhan duoc token")
+        print("FAILED: Không nhận được token")
         return
 
     order_data = {
@@ -98,35 +98,35 @@ def test_order_and_inventory_flow():
             headers={"Authorization": f"Bearer {token}"},
         )
     except Exception as e:
-        print(f"FAILED: Khong the ket noi toi Order Service: {e}")
+        print(f"FAILED: Không thể kết nối tới Order Service: {e}")
         return
 
     if order_res.status_code != 201:
-        print(f"FAILED: Loi tao don hang: {order_res.text}")
+        print(f"FAILED: Lỗi tạo đơn hàng: {order_res.text}")
         return
     
     order_id = order_res.json()["order_id"]
-    print(f"SUCCESS: Don hang da tao! ID: {order_id}")
+    print(f"SUCCESS: Đơn hàng đã tạo! ID: {order_id}")
 
-    # 3. Doi Kafka xu ly
-    print("\n[3] Doi 3 giay de Kafka va Inventory xu ly...")
+    # 3. Đợi Kafka xử lý
+    print("\n[3] Đợi 3 giây để Kafka và Inventory xử lý...")
     time.sleep(3)
 
-    # 4. Kiem tra lai ton kho
-    print("\n[4] Kiem tra ton kho sau khi tao don hang...")
+    # 4. Kiểm tra lại tồn kho
+    print("\n[4] Kiểm tra tồn kho sau khi tạo đơn hàng...")
     try:
         book_check_res = requests.get(f"{INVENTORY_SERVICE_URL}/{book_id}", timeout=5)
         updated_stock = book_check_res.json()["stock"]
     except Exception as e:
-        print(f"FAILED: Khong the kiem tra lai ton kho: {e}")
+        print(f"FAILED: Không thể kiểm tra lại tồn kho: {e}")
         return
     
-    print(f"Ton kho moi: {updated_stock}")
+    print(f"Tồn kho mới: {updated_stock}")
     
     if updated_stock == initial_stock - 1:
-        print("\n===> KET QUA: THANH CONG! Luong Event-Driven hoat dong tot.")
+        print("\n===> KẾT QUẢ: THÀNH CÔNG! Luồng Event-Driven hoạt động tốt.")
     else:
-        print("\n===> KET QUA: THAT BAI. Ton kho khong thay doi.")
+        print("\n===> KẾT QUẢ: THẤT BẠI. Tồn kho không thay đổi.")
 
 if __name__ == "__main__":
     test_order_and_inventory_flow()

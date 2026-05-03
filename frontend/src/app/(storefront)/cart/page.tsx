@@ -12,8 +12,11 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     try {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+      const cart = JSON.parse(localStorage.getItem(cartKey) || "[]");
       setCartItems(Array.isArray(cart) ? cart : []);
     } catch (e) {
       console.error("Error parsing cart:", e);
@@ -24,18 +27,26 @@ export default function CartPage() {
 
   const updateQuantity = (id: string, newQuantity: number, stock: number) => {
     if (newQuantity < 1) return;
-    if (newQuantity > stock) return; // Không cho phép vượt quá tồn kho
+    if (newQuantity > stock) return; 
     const updated = cartItems.map(item => 
       item.book_id === id ? { ...item, quantity: newQuantity } : item
     );
     setCartItems(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
+    
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+    localStorage.setItem(cartKey, JSON.stringify(updated));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const removeItem = (id: string) => {
     const updated = cartItems.filter(item => item.book_id !== id);
     setCartItems(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
+    
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+    localStorage.setItem(cartKey, JSON.stringify(updated));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   if (!mounted) return null;

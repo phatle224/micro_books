@@ -144,7 +144,7 @@ export default function StorefrontLayout({
           </nav>
         </header>
 
-        <main className="flex-1 relative overflow-x-hidden">
+        <main id="main-content" className="flex-1 relative overflow-x-hidden">
           {children}
         </main>
         <Footer />

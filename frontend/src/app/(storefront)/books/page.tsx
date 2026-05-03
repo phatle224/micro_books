@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingCart } from "lucide-react";
+import { useToast } from "@/context/ToastContext";
 
 interface Book {
   _id: string;
@@ -15,6 +16,7 @@ interface Book {
 }
 
 export default function BooksPage() {
+  const { showToast } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +37,9 @@ export default function BooksPage() {
   const addToCart = (e: React.MouseEvent, book: Book) => {
     e.preventDefault(); // Prevent navigating to book details
     try {
-      const storedCart = localStorage.getItem("cart");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const cartKey = user ? `cart_${user._id || user.id}` : "cart_guest";
+      const storedCart = localStorage.getItem(cartKey);
       let currentCart = JSON.parse(storedCart || "[]");
       
       if (!Array.isArray(currentCart)) {
@@ -47,9 +51,10 @@ export default function BooksPage() {
         const nextQuantity = existingItem.quantity + 1;
         if (book.stock > 0 && nextQuantity > book.stock) {
           existingItem.quantity = book.stock;
-          alert(`Only ${book.stock} item(s) left in stock.`);
+          showToast(`Only ${book.stock} item(s) left in stock.`, "warning");
         } else {
           existingItem.quantity = nextQuantity;
+          showToast(`${book.title} added to cart!`, "success");
         }
         existingItem.stock = book.stock;
       } else {
@@ -61,14 +66,12 @@ export default function BooksPage() {
           stock: book.stock,
           image_url: book.image_url
         });
+        showToast(`${book.title} added to cart!`, "success");
       }
-      localStorage.setItem("cart", JSON.stringify(currentCart));
+      localStorage.setItem(cartKey, JSON.stringify(currentCart));
       window.dispatchEvent(new Event("cartUpdated"));
-      alert(`${book.title} added to cart!`);
     } catch (err) {
       console.error("Error updating cart:", err);
-      // Reset cart if corrupted
-      localStorage.setItem("cart", "[]");
     }
   };
 
