@@ -28,9 +28,9 @@ services:
       retries: 10
       start_period: 30s
 
-  order-service:
+  order_service:
     build:
-      context: ./order-service
+      context: ./order_service
       dockerfile: Dockerfile
     container_name: microbooks-order-service
     ports:
@@ -39,7 +39,7 @@ services:
       MONGO_URI: ${MONGO_URI}
       KAFKA_BROKER: kafka:9092
       SERVICE_PORT: 3001
-      INVENTORY_SERVICE_URL: http://inventory-service:3002
+      INVENTORY_SERVICE_URL: http://inventory_service:3002
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@microbooks.com}
@@ -48,16 +48,16 @@ services:
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
     volumes:
-      - ./order-service:/app
+      - ./order_service:/app
     depends_on:
       kafka:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload
     restart: unless-stopped
 
-  inventory-service:
+  inventory_service:
     build:
-      context: ./inventory-service
+      context: ./inventory_service
       dockerfile: Dockerfile
     container_name: microbooks-inventory-service
     ports:
@@ -69,7 +69,7 @@ services:
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
     volumes:
-      - ./inventory-service:/app
+      - ./inventory_service:/app
     depends_on:
       kafka:
         condition: service_healthy
@@ -99,8 +99,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      NEXT_PUBLIC_ORDER_SERVICE_URL: http://order-service:3001
-      NEXT_PUBLIC_INVENTORY_SERVICE_URL: http://inventory-service:3002
+      NEXT_PUBLIC_ORDER_SERVICE_URL: http://order_service:3001
+      NEXT_PUBLIC_INVENTORY_SERVICE_URL: http://inventory_service:3002
       # Kích hoạt Polling cho Next.js/Webpack
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
@@ -108,9 +108,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
-      - /app/.next
     depends_on:
-      - order-service
-      - inventory-service
+      - order_service
+      - inventory_service
     command: npm run dev -- --hostname 0.0.0.0 --webpack
     restart: unless-stopped

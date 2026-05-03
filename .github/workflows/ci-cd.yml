@@ -27,8 +27,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install requests pytest flake8
-          pip install -r order-service/requirements.txt
-          pip install -r inventory-service/requirements.txt
+          pip install -r order_service/requirements.txt
+          pip install -r inventory_service/requirements.txt
 
       - name: Bước 1 - Kiểm tra lỗi trình bày code (Linting)
         id: lint
@@ -42,10 +42,10 @@ jobs:
         run: |
           echo "Đang chạy Unit Tests..."
           echo "--- Testing Order Service ---"
-          cd order-service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd order_service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
           cd ..
           echo "--- Testing Inventory Service ---"
-          cd inventory-service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          cd inventory_service && pytest tests >> ../unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
           cd ..
 
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
@@ -70,12 +70,12 @@ jobs:
           KAFKA_BROKER: localhost:9092
         run: |
           # Chạy Order Service trong background
-          cd order-service
+          cd order_service
           nohup uvicorn app.main:app --host 0.0.0.0 --port 3001 > order_service.log 2>&1 &
           cd ..
           
           # Chạy Inventory Service trong background
-          cd inventory-service
+          cd inventory_service
           nohup uvicorn app.main:app --host 0.0.0.0 --port 3002 > inventory_service.log 2>&1 &
           cd ..
           
@@ -93,9 +93,9 @@ jobs:
         if: failure()
         run: |
           echo "--- NHẬT KÝ (LOG) CỦA ORDER SERVICE ---"
-          [ -f order-service/order_service.log ] && cat order-service/order_service.log || echo "Không tìm thấy tệp nhật ký"
+          [ -f order_service/order_service.log ] && cat order_service/order_service.log || echo "Không tìm thấy tệp nhật ký"
           echo "--- NHẬT KÝ (LOG) CỦA INVENTORY SERVICE ---"
-          [ -f inventory-service/inventory_service.log ] && cat inventory-service/inventory_service.log || echo "Không tìm thấy tệp nhật ký"
+          [ -f inventory_service/inventory_service.log ] && cat inventory_service/inventory_service.log || echo "Không tìm thấy tệp nhật ký"
 
       - name: Lưu lại Log nếu có lỗi xảy ra
         if: failure()
@@ -103,8 +103,8 @@ jobs:
         with:
           name: Log-dịch-vụ-khi-lỗi
           path: |
-            order-service/order_service.log
-            inventory-service/inventory_service.log
+            order_service/order_service.log
+            inventory_service/inventory_service.log
 
       - name: Tạo Issue báo lỗi
         if: failure()
@@ -218,13 +218,13 @@ jobs:
       - name: Build và Push - Order Service
         id: build_order
         run: |
-          docker build ./order-service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest > order_build.log 2>&1
+          docker build ./order_service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest > order_build.log 2>&1
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest >> order_build.log 2>&1 || (echo "ORDER_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Inventory Service
         id: build_inventory
         run: |
-          docker build ./inventory-service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest > inventory_build.log 2>&1
+          docker build ./inventory_service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest > inventory_build.log 2>&1
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest >> inventory_build.log 2>&1 || (echo "INVENTORY_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Frontend
@@ -289,4 +289,3 @@ jobs:
           echo "### 🛠 Thông tin bổ sung" >> $GITHUB_STEP_SUMMARY
           echo "- **Docker Hub User:** \`${{ secrets.DOCKER_HUB_USERNAME }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Thời gian hoàn tất:** $(date +'%H:%M:%S %d/%m/%Y')" >> $GITHUB_STEP_SUMMARY
-
