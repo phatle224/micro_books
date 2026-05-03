@@ -9,8 +9,8 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 
 def get_db():
-    import app.main as main
-    return main.db
+    from .main import get_database
+    return get_database()
 
 
 def public_user(user: dict) -> dict:

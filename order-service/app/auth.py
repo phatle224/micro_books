@@ -17,8 +17,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def get_db():
-    import app.main as main
-    return main.db
+    from .main import get_database
+    return get_database()
 
 
 def hash_password(password: str) -> str:

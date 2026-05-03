@@ -16,6 +16,9 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 
 db = None
 
+def get_database():
+    return db
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +29,7 @@ async def lifespan(app: FastAPI):
 
     global db
     db = db_instance
+    app.state.db = db_instance
     logger.info("Connected to MongoDB (microbooks_inventory)")
 
     # Run seeder
