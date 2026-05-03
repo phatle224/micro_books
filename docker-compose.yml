@@ -99,8 +99,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      NEXT_PUBLIC_ORDER_SERVICE_URL: http://order_service:3001
-      NEXT_PUBLIC_INVENTORY_SERVICE_URL: http://inventory_service:3002
+      ORDER_SERVICE_URL: http://order_service:3001
+      INVENTORY_SERVICE_URL: http://inventory_service:3002
       # Kích hoạt Polling cho Next.js/Webpack
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"

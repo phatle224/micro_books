@@ -16,7 +16,7 @@ export default function AdminOrders() {
       router.push("/admin/login");
       return;
     }
-    fetch("http://localhost:3001/api/orders/", {
+    fetch("/api/orders/", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
@@ -46,7 +46,7 @@ export default function AdminOrders() {
       router.push("/admin/login");
       return;
     }
-    await fetch(`http://localhost:3001/api/orders/${id}`, {
+    await fetch(`/api/orders/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

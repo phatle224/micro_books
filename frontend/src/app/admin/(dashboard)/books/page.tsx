@@ -12,7 +12,7 @@ export default function AdminBooks() {
 
   const fetchBooks = () => {
     setLoading(true);
-    fetch("http://localhost:3002/api/books/")
+    fetch("/api/books/")
       .then(res => res.json())
       .then(data => {
         setBooks(data.books || []);
@@ -44,9 +44,9 @@ export default function AdminBooks() {
       stock: parseInt(formData.stock, 10)
     };
 
-    const url = editingId 
-      ? `http://localhost:3002/api/books/${editingId}`
-      : "http://localhost:3002/api/books/";
+    const url = editingId
+      ? `/api/books/${editingId}`
+      : "/api/books/";
     
     const method = editingId ? "PUT" : "POST";
 
@@ -64,7 +64,7 @@ export default function AdminBooks() {
 
   const handleDelete = async (id: string) => {
     if(confirm("Are you sure?")) {
-      await fetch(`http://localhost:3002/api/books/${id}`, { method: "DELETE" });
+      await fetch(`/api/books/${id}`, { method: "DELETE" });
       fetchBooks();
     }
   };

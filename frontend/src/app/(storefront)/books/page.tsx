@@ -22,7 +22,7 @@ export default function BooksPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:3002/api/books/")
+    fetch("/api/books/")
       .then((res) => res.json())
       .then((data) => {
         setBooks(data.books || []);

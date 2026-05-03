@@ -34,7 +34,7 @@ export default function UserOrdersPage() {
     const userData = JSON.parse(storedUser);
     setUser(userData);
 
-    fetch("http://localhost:3001/api/orders/me", {
+    fetch("/api/orders/me", {
       headers: {
         Authorization: `Bearer ${token}`,
       },

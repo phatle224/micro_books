@@ -17,7 +17,7 @@ export default function AdminDashboard() {
       return;
     }
     Promise.all([
-      fetch("http://localhost:3001/api/orders/stats/summary", {
+      fetch("/api/orders/stats/summary", {
         headers: { Authorization: `Bearer ${token}` },
       }).then(res => {
         if (res.status === 401 || res.status === 403) {
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
         }
         return res.json();
       }),
-      fetch("http://localhost:3002/api/books/stats/summary").then(res => res.json())
+      fetch("/api/books/stats/summary").then(res => res.json())
     ]).then(([orders, inventory]) => {
       if (!orders) return;
       setOrderStats(orders);

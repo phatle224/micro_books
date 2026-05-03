@@ -1,7 +1,25 @@
 import type { NextConfig } from "next";
 
+const orderServiceUrl = process.env.ORDER_SERVICE_URL || "http://localhost:3001";
+const inventoryServiceUrl = process.env.INVENTORY_SERVICE_URL || "http://localhost:3002";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: "/api/auth/:path*",
+        destination: `${orderServiceUrl}/api/auth/:path*`,
+      },
+      {
+        source: "/api/orders/:path*",
+        destination: `${orderServiceUrl}/api/orders/:path*`,
+      },
+      {
+        source: "/api/books/:path*",
+        destination: `${inventoryServiceUrl}/api/books/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

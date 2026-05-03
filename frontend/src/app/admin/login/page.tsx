@@ -15,7 +15,7 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
 
-    fetch("http://localhost:3001/api/auth/login", {
+    fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),

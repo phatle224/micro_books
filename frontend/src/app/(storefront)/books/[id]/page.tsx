@@ -105,7 +105,7 @@ export default function BookDetailsPage() {
   const goPrev = () => setSelectedView(BOOK_VIEWS[(currentIndex - 1 + BOOK_VIEWS.length) % BOOK_VIEWS.length].id);
 
   useEffect(() => {
-    fetch(`http://localhost:3002/api/books/${id}`)
+    fetch(`/api/books/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setBook(data);
