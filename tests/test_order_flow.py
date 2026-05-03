@@ -8,18 +8,33 @@ AUTH_SERVICE_URL = "http://localhost:3001/api/auth"
 
 
 def get_auth_token(email: str, password: str, name: str = "Test User") -> str:
-    register_payload = {"name": name, "email": email, "password": password}
-    register_res = requests.post(f"{AUTH_SERVICE_URL}/register", json=register_payload, timeout=5)
+    # Thu lai nhieu lan vi trong CI dich vu co the khoi dong cham
+    for attempt in range(5):
+        try:
+            # 1. Thu dang ky truoc
+            register_payload = {"name": name, "email": email, "password": password}
+            register_res = requests.post(f"{AUTH_SERVICE_URL}/register", json=register_payload, timeout=5)
+            
+            if register_res.status_code == 201:
+                print(f"DEBUG: Dang ky tai khoan moi thanh cong ({email})")
+                return register_res.json().get("access_token", "")
+            
+            # 2. Neu dang ky bao loi (co the do ton tai roi), thu dang nhap
+            login_payload = {"email": email, "password": password}
+            login_res = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_payload, timeout=5)
+            
+            if login_res.status_code == 200:
+                print(f"DEBUG: Dang nhap thanh cong ({email})")
+                return login_res.json().get("access_token", "")
+            
+            print(f"DEBUG: Attempt {attempt+1} - Register status: {register_res.status_code}, Login status: {login_res.status_code}")
+            
+        except Exception as e:
+            print(f"DEBUG: Attempt {attempt+1} - Connection failed: {e}")
+        
+        time.sleep(2) # Doi 2 giay truoc khi thu lai
 
-    if register_res.status_code == 201:
-        return register_res.json().get("access_token", "")
-
-    login_payload = {"email": email, "password": password}
-    login_res = requests.post(f"{AUTH_SERVICE_URL}/login", json=login_payload, timeout=5)
-    if login_res.status_code != 200:
-        raise RuntimeError(f"Auth failed: {login_res.text}")
-
-    return login_res.json().get("access_token", "")
+    raise RuntimeError(f"Auth failed after 5 attempts for {email}")
 
 def test_order_and_inventory_flow():
     print("--- Bat dau test luong Order -> Kafka -> Inventory ---")
