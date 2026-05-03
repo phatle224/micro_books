@@ -25,7 +25,13 @@ def test_order_and_inventory_flow():
         print("FAILED: Khong co sach nao trong kho de test")
         return
 
-    test_book = books[0]
+    # Tim cuon sach con hang (stock > 0)
+    test_book = next((b for b in books if b["stock"] > 0), None)
+    
+    if not test_book:
+        print("FAILED: Tat ca sach deu het hang!")
+        return
+
     book_id = test_book["_id"]
     initial_stock = test_book["stock"]
     print(f"Chon sach: {test_book['title']} (ID: {book_id})")
