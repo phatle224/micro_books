@@ -228,20 +228,29 @@ jobs:
       - name: Build và Push - Order Service
         id: build_order
         run: |
-          docker build ./order_service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest > order_build.log 2>&1
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest >> order_build.log 2>&1 || (echo "ORDER_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
+          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          REPO=${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service
+          docker build ./order_service -t $REPO:latest -t $REPO:$TAG > order_build.log 2>&1
+          docker push $REPO:latest >> order_build.log 2>&1
+          docker push $REPO:$TAG >> order_build.log 2>&1 || (echo "ORDER_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Inventory Service
         id: build_inventory
         run: |
-          docker build ./inventory_service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest > inventory_build.log 2>&1
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest >> inventory_build.log 2>&1 || (echo "INVENTORY_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
+          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          REPO=${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service
+          docker build ./inventory_service -t $REPO:latest -t $REPO:$TAG > inventory_build.log 2>&1
+          docker push $REPO:latest >> inventory_build.log 2>&1
+          docker push $REPO:$TAG >> inventory_build.log 2>&1 || (echo "INVENTORY_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Frontend
         id: build_frontend
         run: |
-          docker build ./frontend -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend:latest > frontend_build.log 2>&1
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend:latest >> frontend_build.log 2>&1 || (echo "FRONTEND_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
+          TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          REPO=${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend
+          docker build ./frontend -t $REPO:latest -t $REPO:$TAG > frontend_build.log 2>&1
+          docker push $REPO:latest >> frontend_build.log 2>&1
+          docker push $REPO:$TAG >> frontend_build.log 2>&1 || (echo "FRONTEND_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Tạo Issue báo lỗi
         if: failure()
