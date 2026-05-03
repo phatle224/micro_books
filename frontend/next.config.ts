@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/orders",
-        destination: `${orderServiceUrl}/api/orders`,
+        destination: `${orderServiceUrl}/api/orders/`,
       },
       {
         source: "/api/orders/:path*",
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/books",
-        destination: `${inventoryServiceUrl}/api/books`,
+        destination: `${inventoryServiceUrl}/api/books/`,
       },
       {
         source: "/api/books/:path*",
