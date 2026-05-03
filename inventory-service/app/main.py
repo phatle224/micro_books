@@ -39,6 +39,8 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
+    from .kafka_producer import close_producer
+    await close_producer()
     consumer_task.cancel()
     client.close()
     logger.info("Inventory Service stopped")

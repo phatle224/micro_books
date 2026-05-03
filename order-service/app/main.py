@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -26,6 +27,12 @@ async def lifespan(app: FastAPI):
     import app.main as main_module
     main_module.db = db_instance
     logger.info("Connected to MongoDB (microbooks_orders)")
+
+    # Start Kafka Consumer in background
+    from .kafka_consumer import consume_order_updates
+    asyncio.create_task(consume_order_updates(db_instance))
+    logger.info("Background Kafka consumer started")
+
     yield
     # Shutdown
     await close_producer()

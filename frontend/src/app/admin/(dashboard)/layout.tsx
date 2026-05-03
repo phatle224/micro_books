@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, Book, ShoppingBag, LogOut, Star } from "lucide-react";
+import { LayoutDashboard, Book, ShoppingBag, LogOut, Star, Activity } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -48,6 +48,9 @@ export default function AdminLayout({
           </Link>
           <Link href="/admin/orders" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-black transition-colors">
             <ShoppingBag className="w-5 h-5" /> Orders
+          </Link>
+          <Link href="/admin/kafka" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-black transition-colors">
+            <Activity className="w-5 h-5" /> Kafka Monitor
           </Link>
         </nav>
         

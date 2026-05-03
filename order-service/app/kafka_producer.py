@@ -13,11 +13,12 @@ producer = None
 async def get_producer():
     global producer
     if producer is None:
-        producer = AIOKafkaProducer(
+        p = AIOKafkaProducer(
             bootstrap_servers=KAFKA_BROKER,
             value_serializer=lambda v: json.dumps(v, default=str).encode("utf-8"),
         )
-        await producer.start()
+        await p.start()
+        producer = p
         logger.info(f"Kafka producer connected to {KAFKA_BROKER}")
     return producer
 
@@ -36,6 +37,10 @@ async def publish_order_created(order_data: dict):
 async def close_producer():
     global producer
     if producer:
-        await producer.stop()
-        producer = None
-        logger.info("Kafka producer closed")
+        try:
+            await producer.stop()
+        except Exception as e:
+            logger.warning(f"Error closing Kafka producer: {e}")
+        finally:
+            producer = None
+            logger.info("Kafka producer closed")

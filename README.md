@@ -4,22 +4,22 @@
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=150&section=header&text=Microbooks%20in%20Docker&fontSize=40&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
 
   <!-- Link và hiệu ứng chữ chạy -->
-  <a href="https://github.com/Kietnehi/Microbooks-Docker">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Containerized+Microservices+Architecture;📚+Microbooks+Library+Management+System;🛠️+Docker+Compose+%7C+Go+Micro+%7C+PostgreSQL" alt="Typing SVG" />
+  <a href="https://github.com/phatle224/micro_books">
+    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Containerized+Microservices+Architecture;📚+Microbooks+Library+Management+System;🛠️+Docker+Compose+%7C+FastAPI+%7C+MongoDB+Atlas" alt="Typing SVG" />
   </a> 
 
 </div>
 
 # 📚 MicroBooks — Bookstore Management System
 
-Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** với giao tiếp bất đồng bộ qua **Apache Kafka**.
+Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** với giao tiếp bất đồng bộ qua **Apache Kafka** và lưu trữ dữ liệu trên **MongoDB Atlas**.
 
 ## 🏗️ Kiến trúc
 
 ```
 ┌─────────────┐     REST API     ┌─────────────────┐
 │   Frontend  │◄────────────────►│  Order Service   │
-│  (Next.js)  │                  │  (Express:3001)  │
+│  (Next.js)  │                  │  (FastAPI:3001)  │
 │   :3000     │     REST API     │                  │
 │             │◄──────┐         └────────┬──────────┘
 └─────────────┘       │                  │ Publish
@@ -27,10 +27,12 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** v�
                ┌──────┴────────┐  ┌──────────────┐
                │  Inventory    │◄─┤ Apache Kafka │
                │  Service      │  │   :9092      │
-               │  (Express:3002)│  └──────────────┘
-               └───────┬───────┘    order_created
-                       │
-                       ▼
+               │  (FastAPI:3002)│  └──────┬───────┘
+               └───────┬───────┘         │ Monitor
+                       │          ┌──────▼───────┐
+                       │          │   Kafka UI   │
+                       │          │    :8080     │
+                       ▼          └──────────────┘
                ┌──────────────┐
                │ MongoDB Atlas│
                └──────────────┘
@@ -41,9 +43,10 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** v�
 | Component | Technology |
 |-----------|------------|
 | Frontend | Next.js 15 (App Router) |
-| Backend | Node.js / Express |
+| Backend | Python / FastAPI |
 | Database | MongoDB Atlas |
 | Message Broker | Apache Kafka |
+| Kafka Monitoring | Kafka UI (provectuslabs) |
 | Infrastructure | Docker & Docker Compose |
 
 ## 📁 Cấu trúc thư mục
@@ -54,31 +57,26 @@ MicroBooks/
 │   ├── Dockerfile
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── layout.js
-│   │   │   ├── page.js        # Trang chủ
-│   │   │   ├── orders/        # Quản lý đơn hàng
-│   │   │   └── inventory/     # Quản lý kho sách
+│   │   │   ├── (storefront)/  # Trang khách hàng
+│   │   │   └── admin/         # Trang quản trị
 │   │   └── components/
 │   └── package.json
-├── services/
-│   ├── order-service/          # Order Microservice
-│   │   ├── Dockerfile
-│   │   ├── src/
-│   │   │   ├── index.js
-│   │   │   ├── config/        # DB + Kafka config
-│   │   │   ├── models/        # Mongoose models
-│   │   │   ├── routes/
-│   │   │   └── controllers/
-│   │   └── package.json
-│   └── inventory-service/      # Inventory Microservice
-│       ├── Dockerfile
-│       ├── src/
-│       │   ├── index.js
-│       │   ├── config/
-│       │   ├── models/
-│       │   ├── routes/
-│       │   └── controllers/
-│       └── package.json
+├── order-service/              # Order Microservice (Python)
+│   ├── Dockerfile
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── routes.py
+│   │   └── kafka_producer.py
+│   └── requirements.txt
+├── inventory-service/          # Inventory Microservice (Python)
+│   ├── Dockerfile
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── routes.py
+│   │   └── kafka_consumer.py
+│   └── requirements.txt
 ├── docker-compose.yml
 ├── .env
 └── .env.example
@@ -88,7 +86,8 @@ MicroBooks/
 
 ### Yêu cầu
 - Docker & Docker Compose
-- Node.js 18+ (nếu chạy local)
+- Python 3.10+ (nếu chạy local)
+- Node.js 18+ (nếu chạy local frontend)
 
 ### Chạy bằng Docker Compose
 
@@ -99,7 +98,9 @@ cd micro_books
 
 # Tạo file .env (copy từ .env.example)
 cp .env.example .env
-# Cập nhật MONGO_URI trong .env
+
+# CẬP NHẬT MONGO_URI TRONG .ENV VỚI KẾT NỐI MONGODB ATLAS CỦA BẠN
+# Ví dụ: MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/
 
 # Khởi chạy toàn bộ hệ thống
 docker-compose up --build
@@ -107,16 +108,18 @@ docker-compose up --build
 
 ### Chạy local (không Docker)
 
+Lưu ý: Bạn cần cài đặt Kafka và MongoDB local hoặc sử dụng Atlas.
+
 ```bash
 # Terminal 1: Order Service
-cd services/order-service
-npm install
-npm run dev
+cd order-service
+pip install -r requirements.txt
+uvicorn app.main:app --port 3001 --reload
 
 # Terminal 2: Inventory Service
-cd services/inventory-service
-npm install
-npm run dev
+cd inventory-service
+pip install -r requirements.txt
+uvicorn app.main:app --port 3002 --reload
 
 # Terminal 3: Frontend
 cd frontend
@@ -129,8 +132,24 @@ npm run dev
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
-| Order Service API | http://localhost:3001/api/orders |
-| Inventory Service API | http://localhost:3002/api/books |
+| Order Service API | http://localhost:3001/api/orders (Docs: /docs) |
+| Inventory Service API | http://localhost:3002/api/books (Docs: /docs) |
+| Kafka UI | http://localhost:8080 |
+
+## 🔐 Hệ quản trị (Admin Portal)
+
+Bạn có thể truy cập vào trang quản trị để quản lý kho sách, đơn hàng và theo dõi Kafka:
+
+- **URL:** `http://localhost:3000/admin/login`
+- **Tài khoản:** `admin@microbooks.com`
+- **Mật khẩu:** `admin123`
+
+| Trang | Mô tả |
+|-------|-------|
+| `/admin` | Dashboard tổng quan |
+| `/admin/books` | Quản lý kho sách |
+| `/admin/orders` | Quản lý đơn hàng |
+| `/admin/kafka` | Kafka Monitor (embed Kafka UI) |
 
 ## 📡 API Endpoints
 
@@ -139,27 +158,41 @@ npm run dev
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/orders` | Lấy tất cả đơn hàng |
-| GET | `/api/orders/:id` | Lấy chi tiết đơn hàng |
+| GET | `/api/orders/{id}` | Lấy chi tiết đơn hàng |
 | POST | `/api/orders` | Tạo đơn hàng mới |
-| PUT | `/api/orders/:id` | Cập nhật trạng thái |
-| DELETE | `/api/orders/:id` | Xóa đơn hàng |
+| PATCH | `/api/orders/{id}` | Cập nhật trạng thái |
+| GET | `/api/orders/stats/summary` | Thống kê đơn hàng (Admin) |
 
 ### Inventory Service (Port 3002)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/books` | Lấy tất cả sách |
-| GET | `/api/books/:id` | Lấy chi tiết sách |
+| GET | `/api/books/{id}` | Lấy chi tiết sách |
 | POST | `/api/books` | Thêm sách mới |
-| PUT | `/api/books/:id` | Cập nhật sách |
-| DELETE | `/api/books/:id` | Xóa sách |
+| PUT | `/api/books/{id}` | Cập nhật sách |
+| DELETE | `/api/books/{id}` | Xóa sách |
+| GET | `/api/books/categories` | Lấy danh mục sách |
+| GET | `/api/books/stats/summary` | Thống kê kho sách (Admin) |
 
 ## ⚡ Luồng Event-Driven
 
-1. Client tạo đơn hàng → **Order Service** lưu vào MongoDB
-2. Order Service publish event `order_created` lên **Kafka topic**
-3. **Inventory Service** subscribe topic, nhận event
-4. Inventory Service tự động trừ tồn kho trong MongoDB
+1. Client tạo đơn hàng → **Order Service** lưu vào MongoDB Atlas.
+2. Order Service publish event `order_created` lên **Kafka topic**.
+3. **Inventory Service** subscribe topic, nhận event.
+4. Inventory Service tự động trừ tồn kho của sách tương ứng trong MongoDB Atlas.
+5. Toàn bộ hoạt động broker có thể theo dõi real-time qua **Kafka UI** tại `localhost:8080` hoặc trang `/admin/kafka`.
+
+## 📊 Kafka Monitoring
+
+Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** để quan sát luồng message:
+
+- **Brokers** — Xem trạng thái broker, replica, partition
+- **Topics** — Duyệt messages trong topic `order_created`
+- **Consumer Groups** — Theo dõi lag của `inventory-service-group`
+- **Schema Registry** — Quản lý schema (nếu cần)
+
+> Kafka UI được nhúng trực tiếp vào trang Admin tại `/admin/kafka` và cũng có thể mở riêng tại `http://localhost:8080`.
 
 
 ## 🔗 Các tác giả & Tài khoản Github
@@ -174,38 +207,11 @@ npm run dev
 | <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
 | <b><a href="https://github.com/Kietnehi">Trương Phú Kiệt</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
 | Fullstack Dev & DevOps | Data Engineer & Backend |
-| <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
-
-<p align="center">
-  <a href="https://github.com/Kietnehi/Microbooks-Docker">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=2496ED&center=true&vCenter=true&width=500&lines=Microbooks+in+Docker;Containerized+Microservices" alt="Typing SVG" />
-  </a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/SGU-Sai_Gon_University-0056D2?style=flat-square" alt="SGU" />
-  <img src="https://img.shields.io/badge/Base-Ho_Chi_Minh_City-FF4B4B?style=flat-square" alt="HCMC" />
-</p>
 
 ### 🛠 Tech Stack
 
 <p align="center">
-  <img src="https://skillicons.dev/icons?i=docker,go,postgres,react,nodejs,mongodb,git,nginx" alt="Tech Stack" />
-</p>
-
-### 🐳 MICROBOOKS IN DOCKER
-
-<p align="center">
-  <a href="https://github.com/Kietnehi/Microbooks-Docker">
-    <img src="https://img.shields.io/github/stars/Kietnehi/Microbooks-Docker?style=for-the-badge&color=yellow" alt="Stars" />
-    <img src="https://img.shields.io/github/forks/Kietnehi/Microbooks-Docker?style=for-the-badge&color=orange" alt="Forks" />
-    <img src="https://img.shields.io/github/issues/Kietnehi/Microbooks-Docker?style=for-the-badge&color=red" alt="Issues" />
-  </a>
-</p>
-
-<!-- Quote động -->
-<p align="center">
-  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark" alt="Daily Quote"/>
+  <img src="https://skillicons.dev/icons?i=docker,python,fastapi,react,nextjs,mongodb,git,kafka" alt="Tech Stack" />
 </p>
 
 <p align="center">

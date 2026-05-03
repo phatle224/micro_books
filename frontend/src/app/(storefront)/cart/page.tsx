@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trash2, ArrowRight } from "lucide-react";
 
+import { useToast } from "@/context/ToastContext";
+
 export default function CartPage() {
+  const { showToast } = useToast();
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
 
@@ -19,8 +22,9 @@ export default function CartPage() {
     setMounted(true);
   }, []);
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  const updateQuantity = (id: string, newQuantity: number, stock: number) => {
     if (newQuantity < 1) return;
+    if (newQuantity > stock) return; // Không cho phép vượt quá tồn kho
     const updated = cartItems.map(item => 
       item.book_id === id ? { ...item, quantity: newQuantity } : item
     );
@@ -52,17 +56,49 @@ export default function CartPage() {
       ) : (
         <div className="grid md:grid-cols-3 gap-12">
           <div className="md:col-span-2 space-y-6">
-            {cartItems.map((item) => (
-              <div key={item.book_id} className="flex items-center gap-4 border-b border-gray-100 pb-6">
-                <div className="w-20 h-24 bg-gray-50 rounded-lg flex-shrink-0" />
+            {cartItems.map((item, index) => (
+              <div key={item.book_id || index} className="flex items-center gap-4 border-b border-gray-100 pb-6">
+                <div className="w-20 h-24 bg-gray-50 rounded-lg flex-shrink-0 overflow-hidden border border-gray-100">
+                  {item.image_url ? (
+                    <img 
+                      src={item.image_url} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover transition-transform hover:scale-110 duration-500" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">No Cover</div>
+                  )}
+                </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{item.title}</h3>
                   <p className="text-gray-500 mb-2">${item.price.toFixed(2)}</p>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center border border-gray-200 rounded-lg">
-                      <button onClick={() => updateQuantity(item.book_id, item.quantity - 1)} className="px-3 py-1 hover:bg-gray-50 rounded-l-lg">-</button>
-                      <span className="px-3 py-1 text-sm font-medium">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.book_id, item.quantity + 1)} className="px-3 py-1 hover:bg-gray-50 rounded-r-lg">+</button>
+                      <button onClick={() => updateQuantity(item.book_id, item.quantity - 1, item.stock)} className="px-3 py-1 hover:bg-gray-50 rounded-l-lg">-</button>
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          const stock = item.stock || 999;
+                          if (isNaN(val) || val < 1) {
+                            updateQuantity(item.book_id, 1, stock);
+                          } else if (val > stock) {
+                            updateQuantity(item.book_id, stock, stock);
+                            showToast(`Chỉ còn ${stock} sản phẩm trong kho`, "warning");
+                          } else {
+                            updateQuantity(item.book_id, val, stock);
+                          }
+                        }}
+                        className="w-10 text-center text-sm font-medium bg-transparent border-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button 
+                        onClick={() => updateQuantity(item.book_id, item.quantity + 1, item.stock)} 
+                        disabled={item.quantity >= (item.stock || 999)}
+                        className="px-3 py-1 hover:bg-gray-50 rounded-r-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        +
+                      </button>
                     </div>
                     <button onClick={() => removeItem(item.book_id)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                       <Trash2 className="w-4 h-4" />

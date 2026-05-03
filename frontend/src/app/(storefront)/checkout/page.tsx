@@ -140,10 +140,17 @@ export default function CheckoutPage() {
             {cartItems.map((item) => (
               <div key={item.book_id} className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 h-6 bg-gray-200 rounded text-xs flex items-center justify-center font-medium">
-                    {item.quantity}
-                  </span>
-                  <span className="font-medium">{item.title}</span>
+                  <div className="relative w-10 h-12 bg-gray-100 rounded overflow-hidden border border-gray-200 flex-shrink-0">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[8px] text-gray-400">No Cover</div>
+                    )}
+                    <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                      {item.quantity}
+                    </span>
+                  </div>
+                  <span className="font-medium line-clamp-1">{item.title}</span>
                 </div>
                 <span className="text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
               </div>

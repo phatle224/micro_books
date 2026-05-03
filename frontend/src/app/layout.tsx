@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Explore thousands of titles across all genres. Carefully curated collections delivered right to your door.",
 };
 
+import { ToastProvider } from "@/context/ToastContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -19,7 +21,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased bg-white text-black`}
       >
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
