@@ -1,0 +1,26 @@
+name: Local Deployment (CD)
+
+on:
+  workflow_run:
+    workflows: ["Quy trình CI/CD cho Microbooks"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Triển khai trực tiếp trên máy local
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Tải mã nguồn mới nhất
+        uses: actions/checkout@v4
+
+      - name: Cập nhật và Khởi động lại các Service
+        run: |
+          docker-compose down
+          docker-compose up -d --build
+        
+      - name: Kiểm tra trạng thái các Container
+        run: docker ps
