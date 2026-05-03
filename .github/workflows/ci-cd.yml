@@ -31,16 +31,17 @@ jobs:
           pip install -r inventory-service/requirements.txt
 
       - name: Bước 1 - Kiểm tra lỗi trình bày code (Linting)
+        id: lint
         run: |
-          # Kiểm tra lỗi cú pháp và phong cách lập trình (PEP8)
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          echo "Đang kiểm tra Linting..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics > lint_error.txt 2>&1 || (echo "LINT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics >> lint_summary.txt
 
       - name: Bước 2 - Chạy Unit Tests
+        id: unit_test
         run: |
-          # Tìm và chạy tất cả các Unit Test có trong dự án
-          # Nếu chưa có file test nào, lệnh này sẽ kết thúc bình thường
-          pytest --ignore=tests/test_order_flow.py || echo "Chưa có unit tests để chạy"
+          echo "Đang chạy Unit Tests..."
+          pytest --ignore=tests/test_order_flow.py > unit_test_report.txt 2>&1 || (echo "UNIT_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
         run: |
@@ -78,60 +79,114 @@ jobs:
           sleep 15
 
       - name: Bước 5 - Chạy Test tích hợp (Integration Test)
+        id: integration_test
         run: |
-          # Kiểm tra luồng dữ liệu thực tế giữa các service
-          python tests/test_order_flow.py
+          echo "Đang chạy Integration Tests..."
+          python tests/test_order_flow.py > integration_report.txt 2>&1 || (echo "INTEGRATION_FAIL=true" >> $GITHUB_ENV && exit 1)
 
-      - name: Hiển thị Log trực tiếp khi có lỗi xảy ra
+      - name: Hiển thị nhật ký (log) trực tiếp khi có lỗi xảy ra
         if: failure()
         run: |
-          echo "--- LOG CỦA ORDER SERVICE ---"
-          [ -f order-service/order_service.log ] && cat order-service/order_service.log || echo "Không tìm thấy file log"
-          echo "--- LOG CỦA INVENTORY SERVICE ---"
-          [ -f inventory-service/inventory_service.log ] && cat inventory-service/inventory_service.log || echo "Không tìm thấy file log"
+          echo "--- NHẬT KÝ (LOG) CỦA ORDER SERVICE ---"
+          [ -f order-service/order_service.log ] && cat order-service/order_service.log || echo "Không tìm thấy tệp nhật ký"
+          echo "--- NHẬT KÝ (LOG) CỦA INVENTORY SERVICE ---"
+          [ -f inventory-service/inventory_service.log ] && cat inventory-service/inventory_service.log || echo "Không tìm thấy tệp nhật ký"
 
       - name: Lưu lại Log nếu có lỗi xảy ra
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: log-dich-vu-khi-loi
+          name: Log-dịch-vụ-khi-lỗi
           path: |
             order-service/order_service.log
             inventory-service/inventory_service.log
 
-      - name: Tạo Issue khi lỗi
+      - name: Tạo Issue báo lỗi
         if: failure()
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const commitMessage = `${{ github.event.head_commit.message }}`.split('\n')[0];
+            let errorDetails = '';
+            
+            if (process.env.LINT_FAIL === 'true') {
+              const log = fs.existsSync('lint_error.txt') ? fs.readFileSync('lint_error.txt', 'utf8') : 'Không có log';
+              errorDetails += `### 🧹 Lỗi Kiểm tra Định dạng (Linting)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
+            }
+            if (process.env.UNIT_FAIL === 'true') {
+              const log = fs.existsSync('unit_test_report.txt') ? fs.readFileSync('unit_test_report.txt', 'utf8').slice(-2000) : 'Không có log';
+              errorDetails += `### 🧪 Lỗi Kiểm thử Đơn vị (Unit Tests)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
+            }
+            if (process.env.INTEGRATION_FAIL === 'true') {
+              const log = fs.existsSync('integration_report.txt') ? fs.readFileSync('integration_report.txt', 'utf8').slice(-2000) : 'Không có log';
+              errorDetails += `### 🔗 Lỗi Kiểm thử Tích hợp (Integration Tests)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
+            }
+
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `❌ Lỗi Kiểm thử: ${context.workflow} (#${context.runNumber})`,
-              body: `### Phát hiện lỗi trong bước Kiểm thử
-              - **Job:** ${context.job}
-              - **Người kích hoạt:** @${context.actor}
-              - **Chi tiết:** [Xem log chi tiết tại đây](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              title: `🚨 THẤT BẠI: ${context.workflow} (#${context.runNumber})`,
+              body: `## 🔴 Phát hiện lỗi trong quy trình Kiểm thử tự động
 
-              Vui lòng kiểm tra các file log được đính kèm trong Artifact.`
+| Thông tin | Chi tiết |
+| :--- | :--- |
+| **Công việc (Job)** | \`${context.job}\` |
+| **Người thực hiện** | @${context.actor} |
+| **Nhánh (Branch)** | \`${{ github.ref_name }}\` |
+| **Commit cuối** | \`${commitMessage}\` |
+| **Trạng thái** | ❌ Thất bại |
+
+---
+
+${errorDetails}
+
+---
+#### 🛠 Hướng dẫn khắc phục:
+1. Xem toàn bộ nhật ký chạy tại: [GitHub Actions Run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+2. Tải tệp Artifact đính kèm để xem log dịch vụ chi tiết.
+3. Sửa lỗi dựa trên thông báo phía trên và push lại code.`
             })
 
       - name: Báo cáo tóm tắt kết quả
         if: always()
         run: |
-          echo "### 📊 Kết quả Kiểm thử (Test Report)" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ job.status }}" == "success" ]]; then
-            echo "✅ **Trạng thái:** Thành công" >> $GITHUB_STEP_SUMMARY
-            echo "Tất cả các bước Linting, Unit Test và Integration Test đã vượt qua." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Trạng thái:** Thất bại" >> $GITHUB_STEP_SUMMARY
-            echo "Vui lòng kiểm tra log và Issue vừa được tạo để biết chi tiết." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## 📊 BÁO CÁO KIỂM THỬ CHI TIẾT" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Tổng quan" >> $GITHUB_STEP_SUMMARY
+          echo "> **Trạng thái cuối cùng:** $([[ "${{ job.status }}" == "success" ]] && echo "✅ THÀNH CÔNG" || echo "❌ THẤT BẠI")" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "#### Chi tiết:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Workflow:** ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### 📝 Chi tiết từng bước" >> $GITHUB_STEP_SUMMARY
+          echo "| STT | Nội dung kiểm tra | Trạng thái | Ghi chú |" >> $GITHUB_STEP_SUMMARY
+          echo "| :-- | :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          
+          # Lint
+          if [[ "${{ env.LINT_FAIL }}" == "true" ]]; then
+            echo "| 1 | **Kiểm tra Linting** | ❌ | Phát hiện lỗi định dạng code |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 1 | **Kiểm tra Linting** | ✅ | Code đạt chuẩn PEP8 |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Unit Test
+          if [[ "${{ env.UNIT_FAIL }}" == "true" ]]; then
+            echo "| 2 | **Unit Tests** | ❌ | Có test case bị hỏng |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 2 | **Unit Tests** | ✅ | Tất cả logic unit ổn định |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Integration Test
+          if [[ "${{ env.INTEGRATION_FAIL }}" == "true" ]]; then
+            echo "| 3 | **Integration Tests** | ❌ | Lỗi kết nối giữa các Service |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 3 | **Integration Tests** | ✅ | Giao tiếp API hoạt động tốt |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠 Thông tin kỹ thuật" >> $GITHUB_STEP_SUMMARY
+          echo "- **Nhánh:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Mã Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tin nhắn commit:** \`${{ github.event.head_commit.message }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Thời gian:** $(date +'%H:%M:%S %d/%m/%Y')" >> $GITHUB_STEP_SUMMARY
 
   dong-goi-va-day-len-docker-hub:
     name: Đóng gói và Đẩy Docker Images lên Docker Hub
@@ -152,51 +207,73 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build và Push - Order Service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./order-service
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest
+        id: build_order
+        run: |
+          docker build ./order-service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest > order_build.log 2>&1
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service:latest >> order_build.log 2>&1 || (echo "ORDER_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Inventory Service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./inventory-service
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest
+        id: build_inventory
+        run: |
+          docker build ./inventory-service -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest > inventory_build.log 2>&1
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-inventory-service:latest >> inventory_build.log 2>&1 || (echo "INVENTORY_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
       - name: Build và Push - Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend:latest
+        id: build_frontend
+        run: |
+          docker build ./frontend -t ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend:latest > frontend_build.log 2>&1
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-frontend:latest >> frontend_build.log 2>&1 || (echo "FRONTEND_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
-      - name: Tạo Issue khi lỗi
+      - name: Tạo Issue báo lỗi
         if: failure()
         uses: actions/github-script@v7
         with:
           script: |
+            const commitMessage = `${{ github.event.head_commit.message }}`.split('\n')[0];
+            let errorDetails = '';
+            if (process.env.ORDER_BUILD_FAIL === 'true') errorDetails += '- ❌ **Dịch vụ Order:** Thất bại khi xây dựng hoặc đẩy Image.\n';
+            if (process.env.INVENTORY_BUILD_FAIL === 'true') errorDetails += '- ❌ **Dịch vụ Inventory:** Thất bại khi xây dựng hoặc đẩy Image.\n';
+            if (process.env.FRONTEND_BUILD_FAIL === 'true') errorDetails += '- ❌ **Dịch vụ Frontend:** Thất bại khi xây dựng hoặc đẩy Image.\n';
+
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `❌ Lỗi Đóng gói/Đẩy Docker: ${context.workflow} (#${context.runNumber})`,
-              body: `### Phát hiện lỗi trong bước Đóng gói và Đẩy Docker Images
-              - **Job:** ${context.job}
-              - **Người kích hoạt:** @${context.actor}
-              - **Chi tiết:** [Xem log chi tiết tại đây](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              title: `🐳 LỖI DOCKER: ${context.workflow} (#${context.runNumber})`,
+              body: `## 🔴 Lỗi Đóng gói/Đẩy Docker Images
 
-              Vui lòng kiểm tra Docker Hub credentials hoặc Dockerfile.`
+| Thông tin | Chi tiết |
+| :--- | :--- |
+| **Công việc (Job)** | \`${context.job}\` |
+| **Người thực hiện** | @${context.actor} |
+| **Nhánh (Branch)** | \`${{ github.ref_name }}\` |
+| **Commit cuối** | \`${commitMessage}\` |
+
+---
+
+### 🔍 Danh sách dịch vụ gặp lỗi:
+${errorDetails}
+
+---
+#### 🛠 Hướng dẫn khắc phục:
+1. Kiểm tra trạng thái Docker Hub hoặc tài khoản đăng nhập.
+2. Kiểm tra lại tệp \`Dockerfile\` trong thư mục của dịch vụ tương ứng.
+3. Xem chi tiết lỗi build tại: [GitHub Actions Run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
             })
 
       - name: Báo cáo tóm tắt kết quả
         if: always()
         run: |
-          echo "### 🐳 Kết quả Đóng gói Docker (Docker Build Report)" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ job.status }}" == "success" ]]; then
-            echo "✅ **Trạng thái:** Thành công" >> $GITHUB_STEP_SUMMARY
-            echo "Các Docker Images đã được build và đẩy lên Docker Hub thành công." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Trạng thái:** Thất bại" >> $GITHUB_STEP_SUMMARY
-            echo "Quá trình build hoặc push Docker Images gặp lỗi." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## 🐳 BÁO CÁO ĐÓNG GÓI DOCKER" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Trạng thái dịch vụ" >> $GITHUB_STEP_SUMMARY
+          echo "| Dịch vụ | Trạng thái | Hành động |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          
+          [[ "${{ env.ORDER_BUILD_FAIL }}" == "true" ]] && echo "| **Order Service** | ❌ | Cần kiểm tra log |" >> $GITHUB_STEP_SUMMARY || echo "| **Order Service** | ✅ | Đã đẩy lên Docker Hub |" >> $GITHUB_STEP_SUMMARY
+          [[ "${{ env.INVENTORY_BUILD_FAIL }}" == "true" ]] && echo "| **Inventory Service** | ❌ | Cần kiểm tra log |" >> $GITHUB_STEP_SUMMARY || echo "| **Inventory Service** | ✅ | Đã đẩy lên Docker Hub |" >> $GITHUB_STEP_SUMMARY
+          [[ "${{ env.FRONTEND_BUILD_FAIL }}" == "true" ]] && echo "| **Frontend** | ❌ | Cần kiểm tra log |" >> $GITHUB_STEP_SUMMARY || echo "| **Frontend** | ✅ | Đã đẩy lên Docker Hub |" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠 Thông tin bổ sung" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker Hub User:** \`${{ secrets.DOCKER_HUB_USERNAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Thời gian hoàn tất:** $(date +'%H:%M:%S %d/%m/%Y')" >> $GITHUB_STEP_SUMMARY
+
