@@ -19,14 +19,13 @@ db = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global db
     # Startup
     logger.info("Starting Inventory Service...")
     client = AsyncIOMotorClient(MONGO_URI)
     db_instance = client.microbooks_inventory
 
-    import app.main as main_module
-    main_module.db = db_instance
+    global db
+    db = db_instance
     logger.info("Connected to MongoDB (microbooks_inventory)")
 
     # Run seeder

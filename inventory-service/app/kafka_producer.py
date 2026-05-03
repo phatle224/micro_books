@@ -33,6 +33,5 @@ async def publish_stock_failed(order_id, reason):
         logger.error(f"Failed to publish stock_failed event: {e}")
 
 async def close_producer():
-    global producer
     if producer:
         await producer.stop()

@@ -21,14 +21,14 @@ db = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global db
     # Startup
     logger.info("Starting Order Service...")
     client = AsyncIOMotorClient(MONGO_URI)
     db_instance = client.microbooks_orders
-    # Make db accessible to routes
-    import app.main as main_module
-    main_module.db = db_instance
+    
+    # Cap nhat vao bien global db
+    global db
+    db = db_instance
     logger.info("Connected to MongoDB (microbooks_orders)")
 
     admin_email = os.getenv("ADMIN_EMAIL")
