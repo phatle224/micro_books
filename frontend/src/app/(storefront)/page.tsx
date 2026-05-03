@@ -22,7 +22,7 @@ export default function Home() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    fetch("/api/books/?limit=8")
+    fetch("/api/books?limit=8")
       .then((res) => res.json())
       .then((data) => setFeaturedBooks(data.books || []))
       .catch((err) => console.error(err));

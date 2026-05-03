@@ -12,7 +12,7 @@ export default function AdminBooks() {
 
   const fetchBooks = () => {
     setLoading(true);
-    fetch("/api/books/")
+    fetch("/api/books")
       .then(res => res.json())
       .then(data => {
         setBooks(data.books || []);
@@ -46,7 +46,7 @@ export default function AdminBooks() {
 
     const url = editingId
       ? `/api/books/${editingId}`
-      : "/api/books/";
+      : "/api/books";
     
     const method = editingId ? "PUT" : "POST";
 

@@ -16,7 +16,7 @@ export default function AdminOrders() {
       router.push("/admin/login");
       return;
     }
-    fetch("/api/orders/", {
+    fetch("/api/orders", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
