@@ -5,7 +5,10 @@ resources:
   - namespace.yaml
   - config/secrets.yaml
   - config/configmap.yaml
+  - config/monitoring-configs.yaml
   - infrastructure/kafka.yaml
+  - infrastructure/kafka-ui.yaml
+  - infrastructure/promtail-rbac.yaml
   - infrastructure/monitoring.yaml
   - services/order-service.yaml
   - services/inventory-service.yaml
