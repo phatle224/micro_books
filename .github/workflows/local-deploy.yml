@@ -11,12 +11,12 @@ on:
 env:
   # Chỉnh sửa ở đây: 'docker', 'k8s', hoặc 'both'
   DEPLOY_TARGET: 'k8s'
-  RUNNER_LABEL: 'self-hosted'
 
 jobs:
   deploy:
     name: Triển khai trực tiếp trên máy local
-    runs-on: ${{ github.event.inputs.runner_label || env.RUNNER_LABEL }}
+    # Chỉnh sửa nhãn Runner ở đây (ví dụ: 'self-hosted', 'windows', v.v.)
+    runs-on: self-hosted 
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:

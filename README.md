@@ -114,6 +114,9 @@ kubectl get pods -n microbooks -w
 
 # 3. Port-forward để truy cập Frontend (chạy trong terminal riêng)
 kubectl port-forward svc/frontend 3000:3000 -n microbooks
+
+# 4. Dừng và xóa toàn bộ tài nguyên
+kubectl delete -k k8s/base
 ```
 
 ### Truy cập các dịch vụ
