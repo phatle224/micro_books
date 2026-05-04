@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: microbooks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: kietne1211/microbooks-frontend:latest
+        command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--webpack"]
+        ports:
+        - containerPort: 3000
+        env:
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: microbooks-config
+              key: ORDER_SERVICE_URL
+        - name: INVENTORY_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: microbooks-config
+              key: INVENTORY_SERVICE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: microbooks
+spec:
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: ClusterIP

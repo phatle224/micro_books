@@ -6,12 +6,23 @@ on:
     types:
       - completed
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Chọn môi trường triển khai'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - docker
+          - k8s
+          - both
 
 jobs:
   deploy:
     name: Triển khai trực tiếp trên máy local
     runs-on: self-hosted
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Tải mã nguồn mới nhất
@@ -36,10 +47,22 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Cập nhật và Khởi động lại các Service
+      - name: Cập nhật và Khởi động lại các Service (Docker Compose)
+        if: ${{ github.event.inputs.deploy_target == 'docker' || github.event.inputs.deploy_target == 'both' || github.event_name == 'workflow_run' }}
         run: |
           docker-compose pull
           docker-compose up -d
         
-      - name: Kiểm tra trạng thái các Container
-        run: docker ps
+      - name: Triển khai lên Kubernetes (K8s)
+        if: ${{ github.event.inputs.deploy_target == 'k8s' || github.event.inputs.deploy_target == 'both' || github.event_name == 'workflow_run' }}
+        shell: powershell
+        run: |
+          kubectl apply -k k8s/base
+          kubectl rollout restart deployment frontend -n microbooks
+          kubectl rollout restart deployment order-service -n microbooks
+          kubectl rollout restart deployment inventory-service -n microbooks
+
+      - name: Kiểm tra trạng thái hệ thống
+        run: |
+          docker ps
+          kubectl get pods -n microbooks

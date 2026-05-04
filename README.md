@@ -68,7 +68,8 @@ MicroBooks/
 ├── tests/                      # Kiểm thử tích hợp (Integration Tests)
 ├── docs/                       # Tài liệu thiết kế (PRD, Design)
 ├── docs_self_host_runner/      # Tài liệu cấu hình CI/CD Runner
-├── docker-compose.yml          # File điều phối Docker containers
+├── k8s/                        # Kubernetes Manifests (Kustomize)
+│   └── base/                   # Base configuration
 ├── .env                        # Biến môi trường (Cấu hình)
 └── README.md
 ```
@@ -98,6 +99,21 @@ cp .env.example .env
 
 # 3. Khởi chạy
 docker-compose up --build -d
+```
+
+### Chạy bằng Kubernetes (K8s)
+
+Đảm bảo bạn đã bật Kubernetes trong Docker Desktop hoặc Minikube.
+
+```bash
+# 1. Triển khai toàn bộ hệ thống
+kubectl apply -k k8s/base
+
+# 2. Đợi cho đến khi các Pod ở trạng thái Running
+kubectl get pods -n microbooks -w
+
+# 3. Port-forward để truy cập Frontend (chạy trong terminal riêng)
+kubectl port-forward svc/frontend 3000:3000 -n microbooks
 ```
 
 ### Truy cập các dịch vụ
