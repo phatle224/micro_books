@@ -29,6 +29,7 @@ services:
       start_period: 30s
 
   order_service:
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-order-service:latest
     build:
       context: ./order_service
       dockerfile: Dockerfile
@@ -56,6 +57,7 @@ services:
     restart: unless-stopped
 
   inventory_service:
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-inventory-service:latest
     build:
       context: ./inventory_service
       dockerfile: Dockerfile
@@ -92,6 +94,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
