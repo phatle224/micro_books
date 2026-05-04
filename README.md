@@ -42,6 +42,7 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 
 | Thành phần | Công nghệ |
 |-----------|------------|
+<<<<<<< HEAD
 | **Frontend** | Next.js 15 (App Router), Tailwind CSS |
 | **Backend** | Python 3.10+, FastAPI |
 | **Database** | MongoDB Atlas (Cloud) |
@@ -49,6 +50,15 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 | **Monitoring** | Kafka UI (provectuslabs) |
 | **Infrastructure** | Docker & Docker Compose |
 | **CI/CD** | GitHub Actions (Self-hosted Runner) |
+=======
+| Frontend | Next.js 15 (App Router) |
+| Backend | Python / FastAPI |
+| Database | MongoDB Atlas |
+| Message Broker | Apache Kafka |
+| Kafka Monitoring | Kafka UI (provectuslabs) |
+| Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
+| Infrastructure | Docker & Docker Compose |
+>>>>>>> e8931416254de35461979ad8315cf34c587a423e
 
 ## 📁 Cấu trúc thư mục mới
 
@@ -104,6 +114,109 @@ docker-compose up --build -d
 | **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs) | Swagger UI (Inventory Service) |
 
 ## 📊 Kafka Monitoring (User Access)
+```bash
+# Terminal 1: Order Service
+cd order-service
+pip install -r requirements.txt
+uvicorn app.main:app --port 3001 --reload
+
+# Terminal 2: Inventory Service
+cd inventory-service
+pip install -r requirements.txt
+uvicorn app.main:app --port 3002 --reload
+
+# Terminal 3: Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+### Truy cập
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Order Service API | http://localhost:3001/api/orders (Docs: /docs) |
+| Inventory Service API | http://localhost:3002/api/books (Docs: /docs) |
+| Kafka UI | http://localhost:8080 |
+
+## 📈 Monitoring & Observability
+
+Stack quan sát (observability) đã được cấu hình sẵn bằng OpenTelemetry + Prometheus + Grafana + Loki + Tempo.
+
+### Truy cập
+
+| Service | URL |
+|---------|-----|
+| Grafana | http://localhost:3005 (admin / admin) |
+| Prometheus | http://localhost:9090 |
+| Loki | http://localhost:3100 |
+| Tempo | http://localhost:3200 |
+
+### Ghi chú nhanh
+
+- Order/Inventory đã bật OpenTelemetry khi chạy bằng Docker Compose.
+- Metrics được đẩy qua OpenTelemetry Collector và Prometheus sẽ scrape từ Collector.
+- Logs được thu thập bằng Promtail (docker logs) và hiển thị qua Loki.
+- Traces được lưu trong Tempo, có thể xem tại Grafana Explore.
+
+## 🔐 Hệ quản trị (Admin Portal)
+
+Bạn có thể truy cập vào trang quản trị để quản lý kho sách, đơn hàng và theo dõi Kafka:
+
+- **URL:** `http://localhost:3000/admin/login`
+- **Tài khoản:** `admin@microbooks.com`
+- **Mật khẩu:** `admin123`
+
+| Trang | Mô tả |
+|-------|-------|
+| `/admin` | Dashboard tổng quan |
+| `/admin/books` | Quản lý kho sách |
+| `/admin/orders` | Quản lý đơn hàng |
+| `/admin/kafka` | Kafka Monitor (embed Kafka UI) |
+
+## 📡 API Endpoints
+
+### Order Service (Port 3001)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/orders` | Lấy tất cả đơn hàng |
+| GET | `/api/orders/{id}` | Lấy chi tiết đơn hàng |
+| POST | `/api/orders` | Tạo đơn hàng mới |
+| PATCH | `/api/orders/{id}` | Cập nhật trạng thái |
+| GET | `/api/orders/stats/summary` | Thống kê đơn hàng (Admin) |
+
+### Inventory Service (Port 3002)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/books` | Lấy tất cả sách |
+| GET | `/api/books/{id}` | Lấy chi tiết sách |
+| POST | `/api/books` | Thêm sách mới |
+| PUT | `/api/books/{id}` | Cập nhật sách |
+| DELETE | `/api/books/{id}` | Xóa sách |
+| GET | `/api/books/categories` | Lấy danh mục sách |
+| GET | `/api/books/stats/summary` | Thống kê kho sách (Admin) |
+
+## ⚡ Luồng Event-Driven
+
+1. Client tạo đơn hàng → **Order Service** lưu vào MongoDB Atlas.
+2. Order Service publish event `order_created` lên **Kafka topic**.
+3. **Inventory Service** subscribe topic, nhận event.
+4. Inventory Service tự động trừ tồn kho của sách tương ứng trong MongoDB Atlas.
+5. Toàn bộ hoạt động broker có thể theo dõi real-time qua **Kafka UI** tại `localhost:8080` hoặc trang `/admin/kafka`.
+
+## 📊 Kafka Monitoring
+
+Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** để quan sát luồng message:
+
+- **Brokers** — Xem trạng thái broker, replica, partition
+- **Topics** — Duyệt messages trong topic `order_created`
+- **Consumer Groups** — Theo dõi lag của `inventory-service-group`
+- **Schema Registry** — Quản lý schema (nếu cần)
+
+> Kafka UI được nhúng trực tiếp vào trang Admin tại `/admin/kafka` và cũng có thể mở riêng tại `http://localhost:8080`.
 
 Chúng tôi cung cấp giao diện trực quan để người dùng và nhà phát triển có thể theo dõi các luồng sự kiện (Event-driven):
 - **Kafka UI:** Truy cập tại [http://localhost:8080](http://localhost:8080).

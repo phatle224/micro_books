@@ -48,11 +48,17 @@ services:
       ADMIN_NAME: ${ADMIN_NAME:-MicroBooks Admin}
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: order-service
+      OTEL_SERVICE_NAMESPACE: microbooks
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     volumes:
       - ./order_service:/app
     depends_on:
       kafka:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload
     restart: unless-stopped
 
@@ -70,11 +76,17 @@ services:
       SERVICE_PORT: 3002
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: inventory-service
+      OTEL_SERVICE_NAMESPACE: microbooks
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     volumes:
       - ./inventory_service:/app
     depends_on:
       kafka:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload
     restart: unless-stopped
 
@@ -116,3 +128,85 @@ services:
       - inventory_service
     command: npm run dev -- --hostname 0.0.0.0 --webpack
     restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.100.0
+    container_name: microbooks-otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yml:/etc/otelcol-contrib/config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - tempo
+      - loki
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: microbooks-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: microbooks-grafana
+    ports:
+      - "3005:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  loki:
+    image: grafana/loki:3.1.0
+    container_name: microbooks-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.1.0
+    container_name: microbooks-promtail
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: microbooks-tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./monitoring/tempo.yml:/etc/tempo/tempo.yml
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"
+
+volumes:
+  grafana_data:
+  prometheus_data:
+  tempo_data:
+  loki_data:
