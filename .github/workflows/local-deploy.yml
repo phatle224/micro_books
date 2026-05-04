@@ -6,27 +6,17 @@ on:
     types:
       - completed
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      deploy_target:
-        description: 'Chọn môi trường triển khai'
-        required: true
-        default: 'both'
-        type: choice
-        options:
-          - docker
-          - k8s
-          - both
-      runner_label:
-        description: 'Nhãn của Self-hosted Runner (ví dụ: self-hosted, windows, k8s-runner)'
-        required: true
-        default: 'self-hosted'
-        type: string
+  workflow_dispatch: # Vẫn giữ để bạn có thể chạy tay nếu muốn
+
+env:
+  # Chỉnh sửa ở đây: 'docker', 'k8s', hoặc 'both'
+  DEPLOY_TARGET: 'k8s'
+  RUNNER_LABEL: 'self-hosted'
 
 jobs:
   deploy:
     name: Triển khai trực tiếp trên máy local
-    runs-on: ${{ github.event.inputs.runner_label || 'self-hosted' }}
+    runs-on: ${{ github.event.inputs.runner_label || env.RUNNER_LABEL }}
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
@@ -53,13 +43,13 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Cập nhật và Khởi động lại các Service (Docker Compose)
-        if: ${{ github.event.inputs.deploy_target == 'docker' || github.event.inputs.deploy_target == 'both' || github.event_name == 'workflow_run' }}
+        if: ${{ env.DEPLOY_TARGET == 'docker' || env.DEPLOY_TARGET == 'both' }}
         run: |
           docker-compose pull
           docker-compose up -d
         
       - name: Triển khai lên Kubernetes (K8s)
-        if: ${{ github.event.inputs.deploy_target == 'k8s' || github.event.inputs.deploy_target == 'both' || github.event_name == 'workflow_run' }}
+        if: ${{ env.DEPLOY_TARGET == 'k8s' || env.DEPLOY_TARGET == 'both' }}
         shell: powershell
         run: |
           kubectl apply -k k8s/base
