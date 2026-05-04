@@ -42,7 +42,6 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 
 | Thành phần | Công nghệ |
 |-----------|------------|
-<<<<<<< HEAD
 | **Frontend** | Next.js 15 (App Router), Tailwind CSS |
 | **Backend** | Python 3.10+, FastAPI |
 | **Database** | MongoDB Atlas (Cloud) |
@@ -50,7 +49,6 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 | **Monitoring** | Kafka UI (provectuslabs) |
 | **Infrastructure** | Docker & Docker Compose |
 | **CI/CD** | GitHub Actions (Self-hosted Runner) |
-=======
 | Frontend | Next.js 15 (App Router) |
 | Backend | Python / FastAPI |
 | Database | MongoDB Atlas |
@@ -58,7 +56,6 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 | Kafka Monitoring | Kafka UI (provectuslabs) |
 | Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
 | Infrastructure | Docker & Docker Compose |
->>>>>>> e8931416254de35461979ad8315cf34c587a423e
 
 ## 📁 Cấu trúc thư mục mới
 
@@ -269,7 +266,7 @@ Chúng tôi cung cấp giao diện trực quan để người dùng và nhà ph�
 </p>
 
 <p align="center">
-  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
+  <i>Thank you for stopping by! Don’t   forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
 </p>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/>
