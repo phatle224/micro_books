@@ -17,11 +17,16 @@ on:
           - docker
           - k8s
           - both
+      runner_label:
+        description: 'Nhãn của Self-hosted Runner (ví dụ: self-hosted, windows, k8s-runner)'
+        required: true
+        default: 'self-hosted'
+        type: string
 
 jobs:
   deploy:
     name: Triển khai trực tiếp trên máy local
-    runs-on: self-hosted
+    runs-on: ${{ github.event.inputs.runner_label || 'self-hosted' }}
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
