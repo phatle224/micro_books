@@ -47,6 +47,7 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** v�
 | Database | MongoDB Atlas |
 | Message Broker | Apache Kafka |
 | Kafka Monitoring | Kafka UI (provectuslabs) |
+| Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
 | Infrastructure | Docker & Docker Compose |
 
 ## 📁 Cấu trúc thư mục
@@ -135,6 +136,26 @@ npm run dev
 | Order Service API | http://localhost:3001/api/orders (Docs: /docs) |
 | Inventory Service API | http://localhost:3002/api/books (Docs: /docs) |
 | Kafka UI | http://localhost:8080 |
+
+## 📈 Monitoring & Observability
+
+Stack quan sát (observability) đã được cấu hình sẵn bằng OpenTelemetry + Prometheus + Grafana + Loki + Tempo.
+
+### Truy cập
+
+| Service | URL |
+|---------|-----|
+| Grafana | http://localhost:3005 (admin / admin) |
+| Prometheus | http://localhost:9090 |
+| Loki | http://localhost:3100 |
+| Tempo | http://localhost:3200 |
+
+### Ghi chú nhanh
+
+- Order/Inventory đã bật OpenTelemetry khi chạy bằng Docker Compose.
+- Metrics được đẩy qua OpenTelemetry Collector và Prometheus sẽ scrape từ Collector.
+- Logs được thu thập bằng Promtail (docker logs) và hiển thị qua Loki.
+- Traces được lưu trong Tempo, có thể xem tại Grafana Explore.
 
 ## 🔐 Hệ quản trị (Admin Portal)
 
