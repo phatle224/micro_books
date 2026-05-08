@@ -27,6 +27,10 @@
 
 Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hiện đại, giao tiếp bất đồng bộ qua **Apache Kafka**, lưu trữ dữ liệu trên **MongoDB Atlas** và tích hợp quy trình **CI/CD tự động** trên máy local.
 
+<p align="center">
+  <img src="image/readme/pipeline.png" width="100%" alt="CI/CD Pipeline Architecture"/>
+</p>
+
 ## 🏗️ Kiến trúc Hệ thống
 
 ```
@@ -137,10 +141,6 @@ Hệ thống đã được tích hợp quy trình **Automation** hoàn chỉnh:
    - Đảm bảo môi trường local luôn đồng bộ với code mới nhất trên GitHub mà không cần thao tác tay.
 
 > Xem chi tiết tại: [local-deploy.yml](.github/workflows/local-deploy.yml)
-
-<p align="center">
-  <img src="image/readme/pipeline.png" width="100%" alt="CI/CD Pipeline Architecture"/>
-</p>
 
 ## 🛠️ Hướng dẫn cài đặt
 
