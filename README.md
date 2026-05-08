@@ -1,9 +1,9 @@
 <div align="center">
 
-  <!-- Header với tiêu đề mới -->
+  <!-- Header with new title -->
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=150&section=header&text=Microbooks%20v2.0&fontSize=40&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
 
-  <!-- Link và hiệu ứng chữ chạy -->
+  <!-- Link and Typing SVG effect -->
   <a href="https://github.com/phatle224/micro_books">
     <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Self-hosted+CI/CD+Pipeline;📚+Microbooks+v2.0+Architecture;🛠️+Docker+Compose+%7C+FastAPI+%7C+Kafka" alt="Typing SVG" />
   </a> 
@@ -25,13 +25,17 @@
 
 # 📚 MicroBooks — Bookstore Management System (v2.0)
 
-Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hiện đại, giao tiếp bất đồng bộ qua **Apache Kafka**, lưu trữ dữ liệu trên **MongoDB Atlas** và tích hợp quy trình **CI/CD tự động** trên máy local.
+**MicroBooks v2.0** is a production-grade, event-driven microservices system built with FastAPI, Next.js, and Apache Kafka. It features an automated CI/CD pipeline via GitHub Actions and a comprehensive observability stack. Containerized with Docker and Kubernetes-ready, it provides a robust, scalable environment for modern software development.
+
+---
+
+Modern Microservices-based bookstore management system using **Apache Kafka** for asynchronous communication, **MongoDB Atlas** for cloud storage, and integrated automated **CI/CD pipelines** for local deployment.
 
 <p align="center">
   <img src="image/readme/pipeline.png" width="100%" alt="CI/CD Pipeline Architecture"/>
 </p>
 
-## 🏗️ Kiến trúc Hệ thống
+## 🏗️ System Architecture
 
 ```
 ┌─────────────┐     REST API     ┌─────────────────┐
@@ -55,29 +59,29 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
                └──────────────┘
 ```
 
-## 🔄 Toàn bộ Workflow Hệ thống
+## 🔄 Full System Workflow
 
-Dưới đây là sơ đồ chi tiết luồng hoạt động từ lúc lập trình viên đẩy code cho đến khi người dùng tương tác và hệ thống tự động giám sát:
+Below is a detailed diagram of the operational flow, from code push to user interaction and automated monitoring:
 
 ```mermaid
 graph TD
-    subgraph "1. Phát triển & CI/CD (Automation)"
-        Dev[Lập trình viên] -- "Push Code" --> GH[GitHub Repository]
+    subgraph "1. Development & CI/CD (Automation)"
+        Dev[Developer] -- "Push Code" --> GH[GitHub Repository]
         GH -- "Trigger" --> GHA[GitHub Actions]
         GHA -- "Deploy" --> SHR[Self-hosted Runner]
         SHR -- "docker-compose up" --> Docker[Docker Engine]
     end
 
-    subgraph "2. Luồng Nghiệp vụ (Application Logic)"
-        User[Người dùng] -- "Đặt hàng" --> Frontend[Next.js Frontend]
+    subgraph "2. Business Logic (Application Logic)"
+        User[User] -- "Place Order" --> Frontend[Next.js Frontend]
         Frontend -- "POST /api/orders" --> OS[Order Service]
-        OS -- "Lưu đơn hàng" --> DB[(MongoDB Atlas)]
+        OS -- "Save Order" --> DB[(MongoDB Atlas)]
         OS -- "Publish 'order_created'" --> Kafka{Apache Kafka}
-        Kafka -- "Nhận event" --> IS[Inventory Service]
-        IS -- "Cập nhật kho" --> DB
+        Kafka -- "Receive Event" --> IS[Inventory Service]
+        IS -- "Update Stock" --> DB
     end
 
-    subgraph "3. Giám sát & Quan sát (Observability)"
+    subgraph "3. Monitoring & Observability"
         OS & IS & Frontend -- "Metrics/Traces" --> OTel[OpenTelemetry Collector]
         OTel -- "Metrics" --> Prom[Prometheus]
         OTel -- "Traces" --> Tempo[Tempo]
@@ -98,7 +102,7 @@ graph TD
 
 ## 🛠️ Tech Stack & DevOps
 
-| Thành phần | Công nghệ |
+| Component | Technology |
 |-----------|------------|
 | **Frontend** | Next.js 15 (App Router), Tailwind CSS |
 | **Backend** | Python 3.10+, FastAPI |
@@ -107,83 +111,77 @@ graph TD
 | **Monitoring** | Kafka UI (provectuslabs) |
 | **Infrastructure** | Docker & Docker Compose |
 | **CI/CD** | GitHub Actions (Self-hosted Runner) |
-| Frontend | Next.js 15 (App Router) |
-| Backend | Python / FastAPI |
-| Database | MongoDB Atlas |
-| Message Broker | Apache Kafka |
-| Kafka Monitoring | Kafka UI (provectuslabs) |
-| Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
-| Infrastructure | Docker & Docker Compose |
+| **Observability** | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
 
-## 📁 Cấu trúc thư mục mới
+## 📁 Project Directory Structure
 
 ```bash
 MicroBooks/
-├── .github/workflows/          # Quy trình CI/CD (Local Deployment)
+├── .github/workflows/          # CI/CD Workflows (Local Deployment)
 ├── frontend/                   # Next.js Frontend Application
-├── order_service/              # Dịch vụ Quản lý Đơn hàng (Python)
-├── inventory_service/          # Dịch vụ Quản lý Kho (Python)
-├── tests/                      # Kiểm thử tích hợp (Integration Tests)
-├── docs/                       # Tài liệu thiết kế (PRD, Design)
-├── docs_self_host_runner/      # Tài liệu cấu hình CI/CD Runner
+├── order_service/              # Order Management Service (Python)
+├── inventory_service/          # Inventory Management Service (Python)
+├── tests/                      # Integration Tests
+├── docs/                       # Design Documentation (PRD, Design)
+├── docs_self_host_runner/      # CI/CD Runner Configuration Docs
 ├── k8s/                        # Kubernetes Manifests (Kustomize)
 │   └── base/                   # Base configuration
-├── .env                        # Biến môi trường (Cấu hình)
+├── .env                        # Environment Variables
 └── README.md
 ```
 
-## 🚀 Quy trình CI/CD (Self-hosted Runner)
+## 🚀 CI/CD Workflow (Self-hosted Runner)
 
-Hệ thống đã được tích hợp quy trình **Automation** hoàn chỉnh:
-1. **Continuous Integration (CI):** Tự động kiểm tra code và chạy unit tests khi có Pull Request hoặc Push vào branch `main`.
-2. **Continuous Deployment (CD):** Sử dụng **GitHub Actions Self-hosted Runner** cài đặt trực tiếp trên máy chủ local. 
-   - Khi CI thành công, Runner sẽ tự động `docker-compose pull` và `docker-compose up -d`.
-   - Đảm bảo môi trường local luôn đồng bộ với code mới nhất trên GitHub mà không cần thao tác tay.
+The system is integrated with a complete **Automation** workflow:
+1. **Continuous Integration (CI):** Automatically validates code and runs unit tests upon Pull Request or push to the `main` branch.
+2. **Continuous Deployment (CD):** Uses a **GitHub Actions Self-hosted Runner** installed directly on the local server.
+   - Upon successful CI, the Runner automatically executes `docker-compose pull` and `docker-compose up -d`.
+   - Ensures the local environment is always synchronized with the latest code on GitHub without manual intervention.
 
-> Xem chi tiết tại: [local-deploy.yml](.github/workflows/local-deploy.yml)
+> View details at: [local-deploy.yml](.github/workflows/local-deploy.yml)
 
-## 🛠️ Hướng dẫn cài đặt
+## 🛠️ Installation Guide
 
-### Chạy bằng Docker Compose (Khuyên dùng)
+### Run with Docker Compose (Recommended)
 
 ```bash
 # 1. Clone repo
 git clone https://github.com/phatle224/micro_books.git
 cd micro_books
 
-# 2. Cấu hình môi trường
+# 2. Environment Configuration
 cp .env.example .env
-# Cập nhật MONGO_URI và DOCKER_HUB_USERNAME trong .env
+# Update MONGO_URI and DOCKER_HUB_USERNAME in .env
 
-# 3. Khởi chạy
+# 3. Launch
 docker-compose up --build -d
 ```
 
-### Chạy bằng Kubernetes (K8s)
+### Run with Kubernetes (K8s)
 
-Đảm bảo bạn đã bật Kubernetes trong Docker Desktop hoặc Minikube.
+Ensure Kubernetes is enabled in Docker Desktop or Minikube.
 
 ```bash
-# 1. Triển khai toàn bộ hệ thống
+# 1. Deploy the entire system
 kubectl apply -k k8s/base
 
-# 2. Đợi cho đến khi các Pod ở trạng thái Running
+# 2. Wait until all Pods are in Running state
 kubectl get pods -n microbooks -w
 
-# 3. Port-forward để truy cập Frontend (chạy trong terminal riêng)
+# 3. Port-forward to access the Frontend (run in a separate terminal)
 kubectl port-forward svc/frontend 3000:3000 -n microbooks
 
-# 4. Dừng và xóa toàn bộ tài nguyên
+# 4. Stop and remove all resources
 kubectl delete -k k8s/base
 ```
 
-### Truy cập các dịch vụ
+### Service Access
 
-| Service | URL | Mô tả |
+| Service | URL | Description |
 |---------|-----|-------|
-| **Storefront** | [http://localhost:3000](http://localhost:3000) | Giao diện mua sắm |
-| **Admin Portal** | [http://localhost:3000/admin](http://localhost:3000/admin) | Quản lý hệ thống |
-| **Kafka UI** | [http://localhost:8080](http://localhost:8080) | Giám sát hàng đợi tin nhắn |
+| **Storefront** | [http://localhost:3000](http://localhost:3000) | Shopping Interface |
+| **Admin Portal** | [http://localhost:3000/admin](http://localhost:3000/admin) | System Administration |
+| **Kafka UI** | [http://localhost:8080](http://localhost:8080) | Message Queue Monitoring |
 | **Order API Docs** | [http://localhost:3001/docs](http://localhost:3001/docs) | Swagger UI (Order Service) |
 | **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs) | Swagger UI (Inventory Service) |
 
@@ -205,7 +203,7 @@ npm install
 npm run dev
 ```
 
-### Truy cập
+### Access URLs
 
 | Service | URL |
 |---------|-----|
@@ -216,9 +214,9 @@ npm run dev
 
 ## 📈 Monitoring & Observability
 
-Stack quan sát (observability) đã được cấu hình sẵn bằng OpenTelemetry + Prometheus + Grafana + Loki + Tempo.
+The observability stack is pre-configured using OpenTelemetry + Prometheus + Grafana + Loki + Tempo.
 
-### Truy cập
+### Access URLs
 
 | Service | URL |
 |---------|-----|
@@ -227,27 +225,27 @@ Stack quan sát (observability) đã được cấu hình sẵn bằng OpenTelem
 | Loki | http://localhost:3100 |
 | Tempo | http://localhost:3200 |
 
-### Ghi chú nhanh
+### Quick Notes
 
-- Order/Inventory đã bật OpenTelemetry khi chạy bằng Docker Compose.
-- Metrics được đẩy qua OpenTelemetry Collector và Prometheus sẽ scrape từ Collector.
-- Logs được thu thập bằng Promtail (docker logs) và hiển thị qua Loki.
-- Traces được lưu trong Tempo, có thể xem tại Grafana Explore.
+- Order/Inventory services have OpenTelemetry enabled when running via Docker Compose.
+- Metrics are pushed through the OpenTelemetry Collector and scraped by Prometheus.
+- Logs are collected using Promtail (docker logs) and displayed via Loki.
+- Traces are stored in Tempo and can be viewed in Grafana Explore.
 
-## 🔐 Hệ quản trị (Admin Portal)
+## 🔐 Administration (Admin Portal)
 
-Bạn có thể truy cập vào trang quản trị để quản lý kho sách, đơn hàng và theo dõi Kafka:
+You can access the admin portal to manage the bookstore, orders, and monitor Kafka:
 
 - **URL:** `http://localhost:3000/admin/login`
-- **Tài khoản:** `admin@microbooks.com`
-- **Mật khẩu:** `admin123`
+- **Username:** `admin@microbooks.com`
+- **Password:** `admin123`
 
-| Trang | Mô tả |
+| Page | Description |
 |-------|-------|
-| `/admin` | Dashboard tổng quan |
-| `/admin/books` | Quản lý kho sách |
-| `/admin/orders` | Quản lý đơn hàng |
-| `/admin/kafka` | Kafka Monitor (embed Kafka UI) |
+| `/admin` | General Dashboard |
+| `/admin/books` | Book Inventory Management |
+| `/admin/orders` | Order Management |
+| `/admin/kafka` | Kafka Monitor (embedded Kafka UI) |
 
 ## 📡 API Endpoints
 
@@ -255,48 +253,48 @@ Bạn có thể truy cập vào trang quản trị để quản lý kho sách, �
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/orders` | Lấy tất cả đơn hàng |
-| GET | `/api/orders/{id}` | Lấy chi tiết đơn hàng |
-| POST | `/api/orders` | Tạo đơn hàng mới |
-| PATCH | `/api/orders/{id}` | Cập nhật trạng thái |
-| GET | `/api/orders/stats/summary` | Thống kê đơn hàng (Admin) |
+| GET | `/api/orders` | Get all orders |
+| GET | `/api/orders/{id}` | Get order details |
+| POST | `/api/orders` | Create new order |
+| PATCH | `/api/orders/{id}` | Update status |
+| GET | `/api/orders/stats/summary` | Order statistics (Admin) |
 
 ### Inventory Service (Port 3002)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/books` | Lấy tất cả sách |
-| GET | `/api/books/{id}` | Lấy chi tiết sách |
-| POST | `/api/books` | Thêm sách mới |
-| PUT | `/api/books/{id}` | Cập nhật sách |
-| DELETE | `/api/books/{id}` | Xóa sách |
-| GET | `/api/books/categories` | Lấy danh mục sách |
-| GET | `/api/books/stats/summary` | Thống kê kho sách (Admin) |
+| GET | `/api/books` | Get all books |
+| GET | `/api/books/{id}` | Get book details |
+| POST | `/api/books` | Add new book |
+| PUT | `/api/books/{id}` | Update book |
+| DELETE | `/api/books/{id}` | Delete book |
+| GET | `/api/books/categories` | Get book categories |
+| GET | `/api/books/stats/summary` | Inventory statistics (Admin) |
 
-## ⚡ Luồng Event-Driven
+## ⚡ Event-Driven Workflow
 
-1. Client tạo đơn hàng → **Order Service** lưu vào MongoDB Atlas.
-2. Order Service publish event `order_created` lên **Kafka topic**.
-3. **Inventory Service** subscribe topic, nhận event.
-4. Inventory Service tự động trừ tồn kho của sách tương ứng trong MongoDB Atlas.
-5. Toàn bộ hoạt động broker có thể theo dõi real-time qua **Kafka UI** tại `localhost:8080` hoặc trang `/admin/kafka`.
+1. Client creates an order → **Order Service** saves it to MongoDB Atlas.
+2. Order Service publishes an `order_created` event to the **Kafka topic**.
+3. **Inventory Service** subscribes to the topic and receives the event.
+4. Inventory Service automatically deducts stock for the corresponding book in MongoDB Atlas.
+5. All broker activity can be monitored real-time via **Kafka UI** at `localhost:8080` or the `/admin/kafka` page.
 
 ## 📊 Kafka Monitoring
 
-Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** để quan sát luồng message:
+The system integrates **[Kafka UI](https://github.com/provectus/kafka-ui)** for message flow observation:
 
-- **Brokers** — Xem trạng thái broker, replica, partition
-- **Topics** — Duyệt messages trong topic `order_created`
-- **Consumer Groups** — Theo dõi lag của `inventory-service-group`
-- **Schema Registry** — Quản lý schema (nếu cần)
+- **Brokers** — View broker status, replicas, and partitions.
+- **Topics** — Browse messages in the `order_created` topic.
+- **Consumer Groups** — Monitor lag for the `inventory-service-group`.
+- **Schema Registry** — Manage schemas (if applicable).
 
-> Kafka UI được nhúng trực tiếp vào trang Admin tại `/admin/kafka` và cũng có thể mở riêng tại `http://localhost:8080`.
+> Kafka UI is embedded directly into the Admin page at `/admin/kafka` and can also be opened separately at `http://localhost:8080`.
 
-Chúng tôi cung cấp giao diện trực quan để người dùng và nhà phát triển có thể theo dõi các luồng sự kiện (Event-driven):
-- **Kafka UI:** Truy cập tại [http://localhost:8080](http://localhost:8080).
-- Tại đây bạn có thể xem các topic như `order_created`, kiểm tra message payload và theo dõi trạng thái của các Consumers (Inventory Service).
+We provide an intuitive interface for users and developers to track event-driven flows:
+- **Kafka UI:** Access at [http://localhost:8080](http://localhost:8080).
+- Here you can view topics like `order_created`, inspect message payloads, and monitor the status of Consumers (Inventory Service).
 
-## 🔗 Các tác giả & Tài khoản Github
+## 🔗 Authors & GitHub Profiles
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=120&section=header" alt="header" />
@@ -306,7 +304,7 @@ Chúng tôi cung cấp giao diện trực quan để người dùng và nhà ph�
 | :---: | :---: |
 | <a href="https://github.com/Kietnehi"><img src="https://github-readme-stats.vercel.app/api?username=Kietnehi&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> | <a href="https://github.com/phatle224"><img src="https://github-readme-stats.vercel.app/api?username=phatle224&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> |
 | <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
-| <b><a href="https://github.com/Kietnehi">Trương Phú Kiệt</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
+| <b><a href="https://github.com/Kietnehi">Kiet Truong</a></b> | <b><a href="https://github.com/phatle224">Phat Le</a></b> |
 | Fullstack Dev & DevOps | Data Engineer & Backend |
 | <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
 
@@ -337,13 +335,13 @@ Chúng tôi cung cấp giao diện trực quan để người dùng và nhà ph�
   </a>
 </p>
 
-<!-- Quote động -->
+<!-- Dynamic Quote -->
 <p align="center">
   <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark" alt="Daily Quote"/>
 </p>
 
 <p align="center">
-  <i>Thank you for stopping by! Don’t   forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
+  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful.</i>
 </p>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/>
