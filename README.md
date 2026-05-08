@@ -1,12 +1,26 @@
 <div align="center">
 
   <!-- Header với tiêu đề mới -->
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=150&section=header&text=Microbooks%20v2.0&fontSize=40&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Microbooks%20v2.0&fontSize=50&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
 
   <!-- Link và hiệu ứng chữ chạy -->
   <a href="https://github.com/phatle224/micro_books">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Self-hosted+CI/CD+Pipeline;📚+Microbooks+v2.0+Architecture;🛠️+Docker+Compose+%7C+FastAPI+%7C+Kafka" alt="Typing SVG" />
+    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=24&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Self-hosted+CI/CD+Pipeline;📚+Microbooks+v2.0+Architecture;🛠️+Docker+Compose+%7C+FastAPI+%7C+Kafka;🚀+Scalable+Microservices+Design" alt="Typing SVG" />
   </a> 
+
+  <p align="center">
+    <img src="https://img.shields.io/github/stars/phatle224/micro_books?style=for-the-badge&logo=github&color=gold" alt="Stars" />
+    <img src="https://img.shields.io/github/forks/phatle224/micro_books?style=for-the-badge&logo=github&color=blue" alt="Forks" />
+    <img src="https://img.shields.io/github/issues/phatle224/micro_books?style=for-the-badge&logo=github&color=red" alt="Issues" />
+    <img src="https://img.shields.io/github/license/phatle224/micro_books?style=for-the-badge&logo=github&color=green" alt="License" />
+  </p>
+
+  <p align="center">
+    <img src="https://img.shields.io/github/repo-size/phatle224/micro_books?style=flat-square&logo=github" alt="Repo Size" />
+    <img src="https://img.shields.io/github/languages/top/phatle224/micro_books?style=flat-square&logo=python" alt="Top Language" />
+    <img src="https://img.shields.io/github/last-commit/phatle224/micro_books?style=flat-square&logo=git" alt="Last Commit" />
+    <img src="https://img.shields.io/github/directory-file-count/phatle224/micro_books?style=flat-square&logo=files" alt="File Count" />
+  </p>
 
 </div>
 
@@ -14,31 +28,49 @@
 
 Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hiện đại, giao tiếp bất đồng bộ qua **Apache Kafka**, lưu trữ dữ liệu trên **MongoDB Atlas** và tích hợp quy trình **CI/CD tự động** trên máy local.
 
+---
+
 ## 🏗️ Kiến trúc Hệ thống
 
-```
-┌─────────────┐     REST API     ┌─────────────────┐
-│   Frontend  │◄────────────────►│  order_service  │
-│  (Next.js)  │                  │  (FastAPI:3001) │
-│   :3000     │     REST API     │                 │
-│             │◄──────┐         └────────┬─────────┘
-└─────────────┘       │                  │ Publish
-                      │                  ▼
-               ┌──────┴────────┐  ┌──────────────┐
-               │ inventory_    │◄─┤ Apache Kafka │
-               │ service       │  │   :9092      │
-               │ (FastAPI:3002)│  └──────┬───────┘
-               └───────┬───────┘         │ Monitor
-                       │          ┌──────▼───────┐
-                       │          │   Kafka UI   │
-                       │          │    :8080     │
-                       ▼          └──────────────┘
-               ┌──────────────┐
-               │ MongoDB Atlas│
-               └──────────────┘
+```mermaid
+graph TD
+    subgraph Frontend_Layer
+        FE[Next.js Frontend :3000]
+    end
+
+    subgraph Service_Layer
+        OS[Order Service :3001]
+        IS[Inventory Service :3002]
+    end
+
+    subgraph Message_Broker
+        K[Apache Kafka :9092]
+        KUI[Kafka UI :8080]
+    end
+
+    subgraph Data_Layer
+        DB[(MongoDB Atlas)]
+    end
+
+    FE <-->|REST API| OS
+    FE <-->|REST API| IS
+    OS -->|Publish Event| K
+    K -->|Subscribe| IS
+    IS --> DB
+    OS --> DB
+    K -.->|Monitor| KUI
 ```
 
+---
+
 ## 🛠️ Tech Stack & DevOps
+
+### Core Technologies
+<p align="left">
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=nextjs,tailwind,py,fastapi,mongodb,kafka,docker,kubernetes,githubactions,prometheus,grafana" />
+  </a>
+</p>
 
 | Thành phần | Công nghệ |
 |-----------|------------|
@@ -46,18 +78,13 @@ Hệ thống quản lý bán sách áp dụng kiến trúc **Microservices** hi�
 | **Backend** | Python 3.10+, FastAPI |
 | **Database** | MongoDB Atlas (Cloud) |
 | **Message Broker** | Apache Kafka & Zookeeper |
-| **Monitoring** | Kafka UI (provectuslabs) |
-| **Infrastructure** | Docker & Docker Compose |
+| **Infrastructure** | Docker, Docker Compose, Kubernetes (Kustomize) |
 | **CI/CD** | GitHub Actions (Self-hosted Runner) |
-| Frontend | Next.js 15 (App Router) |
-| Backend | Python / FastAPI |
-| Database | MongoDB Atlas |
-| Message Broker | Apache Kafka |
-| Kafka Monitoring | Kafka UI (provectuslabs) |
-| Observability | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
-| Infrastructure | Docker & Docker Compose |
+| **Observability** | OpenTelemetry, Prometheus, Grafana, Loki, Tempo |
 
-## 📁 Cấu trúc thư mục mới
+---
+
+## 📁 Cấu trúc dự án
 
 ```bash
 MicroBooks/
@@ -67,12 +94,11 @@ MicroBooks/
 ├── inventory_service/          # Dịch vụ Quản lý Kho (Python)
 ├── tests/                      # Kiểm thử tích hợp (Integration Tests)
 ├── docs/                       # Tài liệu thiết kế (PRD, Design)
-├── docs_self_host_runner/      # Tài liệu cấu hình CI/CD Runner
-├── k8s/                        # Kubernetes Manifests (Kustomize)
-│   └── base/                   # Base configuration
-├── .env                        # Biến môi trường (Cấu hình)
-└── README.md
+├── k8s/                        # Kubernetes Manifests
+└── docker-compose.yml          # Orchestration configuration
 ```
+
+---
 
 ## 🚀 Quy trình CI/CD (Self-hosted Runner)
 
@@ -83,6 +109,8 @@ Hệ thống đã được tích hợp quy trình **Automation** hoàn chỉnh:
    - Đảm bảo môi trường local luôn đồng bộ với code mới nhất trên GitHub mà không cần thao tác tay.
 
 > Xem chi tiết tại: [local-deploy.yml](.github/workflows/local-deploy.yml)
+
+---
 
 ## 🛠️ Hướng dẫn cài đặt
 
@@ -95,7 +123,6 @@ cd micro_books
 
 # 2. Cấu hình môi trường
 cp .env.example .env
-# Cập nhật MONGO_URI và DOCKER_HUB_USERNAME trong .env
 
 # 3. Khởi chạy
 docker-compose up --build -d
@@ -103,189 +130,65 @@ docker-compose up --build -d
 
 ### Chạy bằng Kubernetes (K8s)
 
-Đảm bảo bạn đã bật Kubernetes trong Docker Desktop hoặc Minikube.
-
 ```bash
 # 1. Triển khai toàn bộ hệ thống
 kubectl apply -k k8s/base
 
-# 2. Đợi cho đến khi các Pod ở trạng thái Running
-kubectl get pods -n microbooks -w
-
-# 3. Port-forward để truy cập Frontend (chạy trong terminal riêng)
+# 2. Port-forward để truy cập Frontend
 kubectl port-forward svc/frontend 3000:3000 -n microbooks
-
-# 4. Dừng và xóa toàn bộ tài nguyên
-kubectl delete -k k8s/base
 ```
 
-### Truy cập các dịch vụ
+---
+
+## 🔗 Các dịch vụ & API
 
 | Service | URL | Mô tả |
 |---------|-----|-------|
 | **Storefront** | [http://localhost:3000](http://localhost:3000) | Giao diện mua sắm |
 | **Admin Portal** | [http://localhost:3000/admin](http://localhost:3000/admin) | Quản lý hệ thống |
-| **Kafka UI** | [http://localhost:8080](http://localhost:8080) | Giám sát hàng đợi tin nhắn |
-| **Order API Docs** | [http://localhost:3001/docs](http://localhost:3001/docs) | Swagger UI (Order Service) |
-| **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs) | Swagger UI (Inventory Service) |
+| **Kafka UI** | [http://localhost:8080](http://localhost:8080) | Giám sát hàng đợi |
+| **Order Docs** | [http://localhost:3001/docs](http://localhost:3001/docs) | Swagger UI (Order) |
+| **Inventory Docs** | [http://localhost:3002/docs](http://localhost:3002/docs) | Swagger UI (Inventory) |
+| **Grafana** | [http://localhost:3005](http://localhost:3005) | Dashboard (admin/admin) |
 
-## 📊 Kafka Monitoring (User Access)
-```bash
-# Terminal 1: Order Service
-cd order-service
-pip install -r requirements.txt
-uvicorn app.main:app --port 3001 --reload
+---
 
-# Terminal 2: Inventory Service
-cd inventory-service
-pip install -r requirements.txt
-uvicorn app.main:app --port 3002 --reload
+## 👥 Tác giả
 
-# Terminal 3: Frontend
-cd frontend
-npm install
-npm run dev
-```
-
-### Truy cập
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Order Service API | http://localhost:3001/api/orders (Docs: /docs) |
-| Inventory Service API | http://localhost:3002/api/books (Docs: /docs) |
-| Kafka UI | http://localhost:8080 |
-
-## 📈 Monitoring & Observability
-
-Stack quan sát (observability) đã được cấu hình sẵn bằng OpenTelemetry + Prometheus + Grafana + Loki + Tempo.
-
-### Truy cập
-
-| Service | URL |
-|---------|-----|
-| Grafana | http://localhost:3005 (admin / admin) |
-| Prometheus | http://localhost:9090 |
-| Loki | http://localhost:3100 |
-| Tempo | http://localhost:3200 |
-
-### Ghi chú nhanh
-
-- Order/Inventory đã bật OpenTelemetry khi chạy bằng Docker Compose.
-- Metrics được đẩy qua OpenTelemetry Collector và Prometheus sẽ scrape từ Collector.
-- Logs được thu thập bằng Promtail (docker logs) và hiển thị qua Loki.
-- Traces được lưu trong Tempo, có thể xem tại Grafana Explore.
-
-## 🔐 Hệ quản trị (Admin Portal)
-
-Bạn có thể truy cập vào trang quản trị để quản lý kho sách, đơn hàng và theo dõi Kafka:
-
-- **URL:** `http://localhost:3000/admin/login`
-- **Tài khoản:** `admin@microbooks.com`
-- **Mật khẩu:** `admin123`
-
-| Trang | Mô tả |
-|-------|-------|
-| `/admin` | Dashboard tổng quan |
-| `/admin/books` | Quản lý kho sách |
-| `/admin/orders` | Quản lý đơn hàng |
-| `/admin/kafka` | Kafka Monitor (embed Kafka UI) |
-
-## 📡 API Endpoints
-
-### Order Service (Port 3001)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/orders` | Lấy tất cả đơn hàng |
-| GET | `/api/orders/{id}` | Lấy chi tiết đơn hàng |
-| POST | `/api/orders` | Tạo đơn hàng mới |
-| PATCH | `/api/orders/{id}` | Cập nhật trạng thái |
-| GET | `/api/orders/stats/summary` | Thống kê đơn hàng (Admin) |
-
-### Inventory Service (Port 3002)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/books` | Lấy tất cả sách |
-| GET | `/api/books/{id}` | Lấy chi tiết sách |
-| POST | `/api/books` | Thêm sách mới |
-| PUT | `/api/books/{id}` | Cập nhật sách |
-| DELETE | `/api/books/{id}` | Xóa sách |
-| GET | `/api/books/categories` | Lấy danh mục sách |
-| GET | `/api/books/stats/summary` | Thống kê kho sách (Admin) |
-
-## ⚡ Luồng Event-Driven
-
-1. Client tạo đơn hàng → **Order Service** lưu vào MongoDB Atlas.
-2. Order Service publish event `order_created` lên **Kafka topic**.
-3. **Inventory Service** subscribe topic, nhận event.
-4. Inventory Service tự động trừ tồn kho của sách tương ứng trong MongoDB Atlas.
-5. Toàn bộ hoạt động broker có thể theo dõi real-time qua **Kafka UI** tại `localhost:8080` hoặc trang `/admin/kafka`.
-
-## 📊 Kafka Monitoring
-
-Hệ thống tích hợp **[Kafka UI](https://github.com/provectus/kafka-ui)** để quan sát luồng message:
-
-- **Brokers** — Xem trạng thái broker, replica, partition
-- **Topics** — Duyệt messages trong topic `order_created`
-- **Consumer Groups** — Theo dõi lag của `inventory-service-group`
-- **Schema Registry** — Quản lý schema (nếu cần)
-
-> Kafka UI được nhúng trực tiếp vào trang Admin tại `/admin/kafka` và cũng có thể mở riêng tại `http://localhost:8080`.
-
-Chúng tôi cung cấp giao diện trực quan để người dùng và nhà phát triển có thể theo dõi các luồng sự kiện (Event-driven):
-- **Kafka UI:** Truy cập tại [http://localhost:8080](http://localhost:8080).
-- Tại đây bạn có thể xem các topic như `order_created`, kiểm tra message payload và theo dõi trạng thái của các Consumers (Inventory Service).
-
-## 🔗 Các tác giả & Tài khoản Github
+<table align="center">
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Kietnehi">
+        <img src="https://github.com/Kietnehi.png" width="100px;" alt="Kietnehi"/><br />
+        <sub><b>Trương Phú Kiệt</b></sub>
+      </a><br />
+      <img src="https://img.shields.io/badge/Fullstack-Dev-blue?style=flat-square" />
+    </td>
+    <td align="center">
+      <a href="https://github.com/phatle224">
+        <img src="https://github.com/phatle224.png" width="100px;" alt="phatle224"/><br />
+        <sub><b>Phát Lê</b></sub>
+      </a><br />
+      <img src="https://img.shields.io/badge/Backend-Engineer-green?style=flat-square" />
+    </td>
+  </tr>
+</table>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=120&section=header" alt="header" />
+  <img src="https://img.shields.io/badge/SGU-Sai_Gon_University-0056D2?style=for-the-badge&logo=google-chrome&logoColor=white" />
+  <img src="https://img.shields.io/badge/HCMC-Vietnam-FF4B4B?style=for-the-badge&logo=world&logoColor=white" />
 </p>
 
-| | |
-| :---: | :---: |
-| <a href="https://github.com/Kietnehi"><img src="https://github-readme-stats.vercel.app/api?username=Kietnehi&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> | <a href="https://github.com/phatle224"><img src="https://github-readme-stats.vercel.app/api?username=phatle224&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> |
-| <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
-| <b><a href="https://github.com/Kietnehi">Trương Phú Kiệt</a></b> | <b><a href="https://github.com/phatle224">Phát Lê</a></b> |
-| Fullstack Dev & DevOps | Data Engineer & Backend |
-| <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
+---
 
-<p align="center">
-  <a href="https://github.com/phatle224/micro_books">
-    <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=2496ED&center=true&vCenter=true&width=500&lines=Microbooks+in+Docker;Containerized+Microservices" alt="Typing SVG" />
-  </a>
-</p>
+<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/SGU-Sai_Gon_University-0056D2?style=flat-square" alt="SGU" />
-  <img src="https://img.shields.io/badge/Base-Ho_Chi_Minh_City-FF4B4B?style=flat-square" alt="HCMC" />
-</p>
+  <!-- Quote động -->
+  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dracula" alt="Daily Quote"/>
 
-### 🛠 Tech Stack
+  <p>
+    <i>Thank you for stopping by! Don't forget to give this repo a <b>⭐️ Star</b> if you find it useful.</i>
+  </p>
 
-<p align="center">
-  <img src="https://skillicons.dev/icons?i=docker,go,postgres,react,nodejs,mongodb,git,nginx,kafka" alt="Tech Stack" />
-</p>
-
-### 🐳 MICROBOOKS IN DOCKER
-
-<p align="center">
-  <a href="https://github.com/phatle224/micro_books">
-    <img src="https://img.shields.io/github/stars/phatle224/micro_books?style=for-the-badge&logo=github" alt="Stars" />
-    <img src="https://img.shields.io/github/forks/phatle224/micro_books?style=for-the-badge&logo=github" alt="Forks" />
-    <img src="https://img.shields.io/github/issues/phatle224/micro_books?style=for-the-badge&color=red" alt="Issues" />
-  </a>
-</p>
-
-<!-- Quote động -->
-<p align="center">
-  <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark" alt="Daily Quote"/>
-</p>
-
-<p align="center">
-  <i>Thank you for stopping by! Don’t   forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
-</p>
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=100&section=footer"/>
+</div>
