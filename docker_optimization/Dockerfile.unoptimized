@@ -1,0 +1,20 @@
+# Dockerfile CHƯA TỐI ƯU (Dùng cho thuyết trình)
+FROM python:3.11
+
+# Sai lầm 1: Không dùng .dockerignore (copy cả venv, git...)
+# Sai lầm 2: Copy toàn bộ trước khi cài dependencies (mất cache)
+WORKDIR /app
+COPY . .
+
+# Sai lầm 3: Chạy nhiều lệnh RUN riêng lẻ
+RUN apt-get update
+RUN apt-get install -y gcc python3-dev
+
+# Sai lầm 4: Cài đặt không tối ưu (không dùng --no-cache-dir)
+RUN pip install -r inventory_service/requirements.txt
+
+EXPOSE 3002
+
+# Chạy app (phải trỏ đúng module vì context copy từ root)
+ENV PYTHONPATH=/app/inventory_service
+CMD ["uvicorn", "inventory_service.app.main:app", "--host", "0.0.0.0", "--port", "3002"]

@@ -1,0 +1,10 @@
+chcp 65001; powershell -ExecutionPolicy Bypass -File "c:\Users\ADMIN\Desktop\micro_books\docker_optimization\benchmark.ps1"
+# Hoặc 
+powershell -ExecutionPolicy Bypass -File ".\docker_optimization\benchmark.ps1"
+
+
+Chạy optimize
+docker build -t inventory:optimized -f docker_optimization/Dockerfile.optimized .
+
+Chạy unoptimized 
+docker build -t inventory:unoptimized -f docker_optimization/Dockerfile.unoptimized .

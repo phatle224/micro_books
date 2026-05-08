@@ -1,0 +1,39 @@
+# Dockerfile TỐI ƯU (Dùng cho thuyết trình)
+# Stage 1: Build stage
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Ưu điểm 1: Tận dụng Layer Cache bằng cách cài dependencies trước
+COPY inventory_service/requirements.txt .
+
+# Ưu điểm 2: Kết hợp các lệnh RUN, không cài tool thừa vào image cuối
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Stage 2: Runtime stage (Chỉ chứa những gì cần thiết để chạy)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Ưu điểm 3: Copy các package đã build sẵn, bỏ lại compilers/headers
+COPY --from=builder /install /usr/local
+
+# Ưu điểm 4: Tạo user thường (Security best practice)
+RUN adduser --disabled-password appuser
+COPY inventory_service/app ./app
+
+# Phân quyền cho appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Ưu điểm 5: Biến môi trường tối ưu cho Docker
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+EXPOSE 3002
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3002"]

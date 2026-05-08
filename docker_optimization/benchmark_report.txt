@@ -1,0 +1,69 @@
+﻿====================================================
+         KẾT QUẢ SO SÁNH NÂNG CAO (BENCHMARK)
+         Thời gian: 09/05/2026 02:49:00
+====================================================
+
+
+Tiêu chí          Chưa tối ưu        Đã tối ưu         Kết quả          
+--------          -----------        ---------         -------          
+Dung lượng (Size) 2.77GB             296MB             Giảm ~9 lần      
+Thời gian Build   489.27s            6.53s             Nhanh hơn        
+Multi-stage Build Không (1 stage)    Có (2 stages)     Tối ưu dung lượng
+.dockerignore     Không có           Có sử dụng        Build sạch hơn   
+Layer Caching     Kém (Copy toàn bộ) Tốt (Tách deps)   Build lần 2 nhanh
+Số lượng Layers   12                 9                 Gọn nhẹ hơn      
+Bảo mật (User)    root (Nguy hiểm)   appuser (An toàn) Bảo mật hơn      
+
+
+
+
+--- CHI TIẾT CẤU TRÚC LAYER (BẢN CHƯA TỐI ƯU) ---
+CREATED BY                                      SIZE
+CMD ["uvicorn" "inventory_service.app.main:a…   0B
+ENV PYTHONPATH=/app/inventory_service           0B
+EXPOSE &{[{{16 0} {16 0}}] 0xc006b00e00}        0B
+RUN /bin/sh -c pip install -r inventory_serv…   126MB
+RUN /bin/sh -c apt-get install -y gcc python…   39.2MB
+RUN /bin/sh -c apt-get update # buildkit        21.2MB
+COPY . . # buildkit                             742MB
+WORKDIR /app                                    8.19kB
+CMD ["python3"]                                 0B
+RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB
+RUN /bin/sh -c set -eux;   wget -O python.ta…   70.1MB
+ENV PYTHON_SHA256=272179ddd9a2e41a0fc8e42e33…   0B
+ENV PYTHON_VERSION=3.11.15                      0B
+ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B
+RUN /bin/sh -c set -eux;  apt-get update;  a…   19.8MB
+ENV LANG=C.UTF-8                                0B
+ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B
+RUN /bin/sh -c set -ex;  apt-get update;  ap…   694MB
+RUN /bin/sh -c set -eux;  apt-get update;  a…   202MB
+RUN /bin/sh -c set -eux;  apt-get update;  a…   65MB
+# debian.sh --arch 'amd64' out/ 'trixie' '@1…   134MB
+
+
+--- CHI TIẾT CẤU TRÚC LAYER (BẢN ĐÃ TỐI ƯU) ---
+CREATED BY                                      SIZE
+CMD ["uvicorn" "app.main:app" "--host" "0.0.…   0B
+EXPOSE &{[{{37 0} {37 0}}] 0xc00131e3c0}        0B
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B
+USER appuser                                    0B
+RUN /bin/sh -c chown -R appuser:appuser /app…   102kB
+COPY inventory_service/app ./app # buildkit     102kB
+RUN /bin/sh -c adduser --disabled-password a…   73.7kB
+COPY /install /usr/local # buildkit             84.5MB
+WORKDIR /app                                    8.19kB
+CMD ["python3"]                                 0B
+RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB
+RUN /bin/sh -c set -eux;   savedAptMark="$(a…   48.4MB
+ENV PYTHON_SHA256=272179ddd9a2e41a0fc8e42e33…   0B
+ENV PYTHON_VERSION=3.11.15                      0B
+ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8…   0B
+RUN /bin/sh -c set -eux;  apt-get update;  a…   4.94MB
+ENV LANG=C.UTF-8                                0B
+ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…   0B
+# debian.sh --arch 'amd64' out/ 'trixie' '@1…   87.4MB
+
+
+=> KẾT LUẬN: Bản TỐI ƯU giúp tiết kiệm tài nguyên và bảo mật vượt trội!
+====================================================
