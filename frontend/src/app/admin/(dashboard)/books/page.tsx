@@ -146,11 +146,11 @@ export default function AdminBooks() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Price ($)</label>
-                    <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                    <input required type="number" step="0.01" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Stock</label>
-                    <input required type="number" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                    <input required type="number" min="0" className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:border-black outline-none transition-all" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
                   </div>
                 </div>
                 <div>
