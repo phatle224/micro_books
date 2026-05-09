@@ -13,4 +13,6 @@ resources:
   - services/order-service.yaml
   - services/inventory-service.yaml
   - services/frontend.yaml
+  - config/hpa.yaml
+  - config/quotas.yaml
   - ingress.yaml

@@ -18,6 +18,25 @@ spec:
         image: kietne1211/microbooks-inventory-service:latest
         ports:
         - containerPort: 3002
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
         env:
         - name: MONGO_URI
           valueFrom:
@@ -53,4 +72,4 @@ spec:
   - protocol: TCP
     port: 3002
     targetPort: 3002
-  type: ClusterIP
+  type: LoadBalancer

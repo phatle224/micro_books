@@ -92,6 +92,7 @@ spec:
   ports:
   - port: 9090
     targetPort: 9090
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -118,6 +119,26 @@ spec:
           value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: "admin"
+        volumeMounts:
+        - name: grafana-provisioning-datasources
+          mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          subPath: datasources.yaml
+        - name: grafana-provisioning-dashboards
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+          subPath: dashboards.yaml
+        - name: grafana-dashboards
+          mountPath: /var/lib/grafana/dashboards/microservices-dashboard.json
+          subPath: microservices-dashboard.json
+      volumes:
+      - name: grafana-provisioning-datasources
+        configMap:
+          name: monitoring-configs
+      - name: grafana-provisioning-dashboards
+        configMap:
+          name: monitoring-configs
+      - name: grafana-dashboards
+        configMap:
+          name: monitoring-configs
 ---
 apiVersion: v1
 kind: Service
@@ -128,8 +149,9 @@ spec:
   selector:
     app: grafana
   ports:
-  - port: 3000
+  - port: 3005
     targetPort: 3000
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment

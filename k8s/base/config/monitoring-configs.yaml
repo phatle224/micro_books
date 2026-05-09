@@ -120,3 +120,37 @@ data:
           receivers: [otlp]
           processors: [batch]
           exporters: [prometheus]
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo:3200
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+  microservices-dashboard.json: |
+    {
+      "annotations": { "list": [ { "builtIn": 1, "datasource": "-- Grafana --", "enable": true, "hide": true, "name": "Annotations & Alerts", "type": "dashboard" } ] },
+      "editable": true, "gnetId": null, "graphTooltip": 0, "id": null, "links": [], "panels": [
+        { "title": "Service Health Status", "type": "stat", "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 }, "datasource": "Prometheus", "targets": [ { "expr": "up{namespace=\"microbooks\"}", "format": "time_series", "legendFormat": "{{app}}" } ] }
+      ], "schemaVersion": 30, "style": "dark", "tags": [], "templating": { "list": [] }, "time": { "from": "now-1h", "to": "now" }, "timepicker": {}, "timezone": "", "title": "Microservices Overview", "uid": "microbooks-main", "version": 1
+    }
