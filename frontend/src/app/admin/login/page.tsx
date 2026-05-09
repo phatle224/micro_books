@@ -30,6 +30,12 @@ export default function AdminLogin() {
         }
         localStorage.setItem("admin_token", data.access_token);
         localStorage.setItem("admin_user", JSON.stringify(data.user));
+        
+        // Synchronize with storefront session
+        localStorage.setItem("auth_token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.dispatchEvent(new Event("authUpdated"));
+
         router.push("/admin");
       })
       .catch((err) => {

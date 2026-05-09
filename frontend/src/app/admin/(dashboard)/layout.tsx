@@ -36,6 +36,12 @@ export default function AdminLayout({
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
+    
+    // Also clear storefront session
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authUpdated"));
+
     router.push("/admin/login");
   };
 
