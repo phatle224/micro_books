@@ -27,6 +27,13 @@ spec:
           value: "zookeeper:2181"
         - name: DYNAMIC_CONFIG_ENABLED
           value: "true"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
 ---
 apiVersion: v1
 kind: Service

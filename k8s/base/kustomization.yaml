@@ -5,10 +5,12 @@ resources:
   - namespace.yaml
   - config/secrets.yaml
   - config/configmap.yaml
-  - config/monitoring-configs.yaml
   - infrastructure/kafka.yaml
   - infrastructure/kafka-ui.yaml
+  - infrastructure/kube-state-metrics.yaml
+  - infrastructure/metrics-server.yaml
   - infrastructure/promtail-rbac.yaml
+  - infrastructure/prometheus-rbac.yaml
   - infrastructure/monitoring.yaml
   - services/order-service.yaml
   - services/inventory-service.yaml
@@ -16,3 +18,19 @@ resources:
   - config/hpa.yaml
   - config/quotas.yaml
   - ingress.yaml
+
+configMapGenerator:
+  - name: monitoring-configs
+    namespace: microbooks
+    files:
+      - prometheus.yml=config/monitoring/prometheus.yml
+      - loki-config.yaml=config/monitoring/loki-config.yml
+      - tempo.yaml=config/monitoring/tempo.yml
+      - promtail-config.yaml=config/monitoring/promtail-config.yml
+      - otel-collector-config.yaml=config/monitoring/otel-collector-config.yml
+      - datasources.yaml=config/monitoring/datasources.yml
+      - dashboards.yaml=config/monitoring/dashboards.yml
+      - microservices-dashboard.json=config/monitoring/microbooks-dashboard.json
+
+generatorOptions:
+  disableNameSuffixHash: true

@@ -23,21 +23,25 @@ spec:
           httpGet:
             path: /
             port: 3000
-          initialDelaySeconds: 30
+          initialDelaySeconds: 180
           periodSeconds: 10
+          timeoutSeconds: 20
+          failureThreshold: 12
         readinessProbe:
           httpGet:
             path: /
             port: 3000
-          initialDelaySeconds: 15
+          initialDelaySeconds: 30
           periodSeconds: 5
+          timeoutSeconds: 20
+          failureThreshold: 6
         resources:
           limits:
             cpu: "500m"
-            memory: "512Mi"
+            memory: "1536Mi"
           requests:
             cpu: "100m"
-            memory: "256Mi"
+            memory: "512Mi"
         env:
         - name: ORDER_SERVICE_URL
           valueFrom:

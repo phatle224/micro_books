@@ -253,25 +253,25 @@
         "legend": { "calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi" }
       },
-      "title": "③ order-service Pod Status — Auto Healing",
-      "description": "Chỉ hiện order-service pods. Khi xóa pod: Running về 0, Pending chớp lên, rồi Running quay về 1.",
+      "title": "③ Pod Status over time — Auto Healing",
+      "description": "Khi test auto healing: đường Running giảm về 0, Pending chớp lên, rồi Running quay về. Lịch sử không bị mất dù event xảy ra nhanh.",
       "type": "timeseries",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Running\", pod=~\"order-service.*\"})",
+          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Running\"})",
           "legendFormat": "Running",
           "range": true, "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Pending\", pod=~\"order-service.*\"})",
+          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Pending\"})",
           "legendFormat": "Pending",
           "range": true, "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Failed\", pod=~\"order-service.*\"})",
+          "expr": "sum(kube_pod_status_phase{namespace=\"microbooks\", phase=\"Failed\"})",
           "legendFormat": "Failed",
           "range": true, "refId": "C"
         }

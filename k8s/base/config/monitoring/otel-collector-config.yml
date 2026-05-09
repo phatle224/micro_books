@@ -31,7 +31,8 @@ exporters:
       insecure: true
   prometheus:
     endpoint: 0.0.0.0:8889
-    resource_to_telemetry_conversion: true # Critical for moving resource attributes to metric labels
+    resource_to_telemetry_conversion:
+      enabled: true
   logging:
     verbosity: basic
 

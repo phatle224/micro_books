@@ -17,6 +17,19 @@ spec:
       target:
         type: Utilization
         averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Pods
+        value: 4
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Pods
+        value: 4
+        periodSeconds: 15
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -37,6 +50,19 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 15
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -57,3 +83,16 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 15

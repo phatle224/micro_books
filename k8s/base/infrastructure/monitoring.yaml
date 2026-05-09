@@ -25,6 +25,13 @@ spec:
         - name: otel-config
           mountPath: /etc/otelcol-contrib/config.yml
           subPath: otel-collector-config.yaml
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
       volumes:
       - name: otel-config
         configMap:
@@ -64,6 +71,7 @@ spec:
       labels:
         app: prometheus
     spec:
+      serviceAccountName: prometheus
       containers:
       - name: prometheus
         image: prom/prometheus:v2.53.0
@@ -76,6 +84,13 @@ spec:
         - name: prometheus-config
           mountPath: /etc/prometheus/prometheus.yml
           subPath: prometheus.yml
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
       volumes:
       - name: prometheus-config
         configMap:
@@ -129,6 +144,13 @@ spec:
         - name: grafana-dashboards
           mountPath: /var/lib/grafana/dashboards/microservices-dashboard.json
           subPath: microservices-dashboard.json
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
       volumes:
       - name: grafana-provisioning-datasources
         configMap:
@@ -178,6 +200,13 @@ spec:
         - name: loki-config
           mountPath: /etc/loki/loki-config.yaml
           subPath: loki-config.yaml
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "300m"
+            memory: "512Mi"
       volumes:
       - name: loki-config
         configMap:
@@ -211,6 +240,8 @@ spec:
         app: promtail
     spec:
       serviceAccountName: promtail # Cần quyền để đọc Pod log
+      securityContext:
+        runAsUser: 0
       containers:
       - name: promtail
         image: grafana/promtail:3.1.0
@@ -224,6 +255,13 @@ spec:
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
       volumes:
       - name: promtail-config
         configMap:
@@ -256,10 +294,19 @@ spec:
         args: ["-config.file=/etc/tempo/tempo.yaml"]
         ports:
         - containerPort: 3200
+        - containerPort: 4317
+        - containerPort: 4318
         volumeMounts:
         - name: tempo-config
           mountPath: /etc/tempo/tempo.yaml
           subPath: tempo.yaml
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "300m"
+            memory: "512Mi"
       volumes:
       - name: tempo-config
         configMap:
@@ -274,5 +321,12 @@ spec:
   selector:
     app: tempo
   ports:
-  - port: 3200
+  - name: http
+    port: 3200
     targetPort: 3200
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+  - name: otlp-http
+    port: 4318
+    targetPort: 4318
