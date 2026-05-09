@@ -404,7 +404,7 @@
       },
       "id": 7,
       "title": "Recent Traces (Tempo)",
-      "type": "traceql-search",
+      "type": "traces",
       "targets": [
         {
           "datasource": {

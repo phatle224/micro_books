@@ -37,4 +37,12 @@ storage:
     backend: local
     local:
       path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal
 
+overrides:
+  defaults:
+    ingestion:
+      max_traces_per_user: 10000
+    metrics_generator:
+      processors: [service-graphs, span-metrics]

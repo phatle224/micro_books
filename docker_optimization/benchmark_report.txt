@@ -1,13 +1,13 @@
 ﻿====================================================
          KẾT QUẢ SO SÁNH NÂNG CAO (BENCHMARK)
-         Thời gian: 09/05/2026 02:49:00
+         Thời gian: 09-05-2026 20:09:21
 ====================================================
 
 
 Tiêu chí          Chưa tối ưu        Đã tối ưu         Kết quả          
 --------          -----------        ---------         -------          
-Dung lượng (Size) 2.77GB             296MB             Giảm ~9 lần      
-Thời gian Build   489.27s            6.53s             Nhanh hơn        
+Dung lượng (Size) 2.54GB             296MB             Giảm ~9 lần      
+Thời gian Build   413.73s            338.08s           Nhanh hơn        
 Multi-stage Build Không (1 stage)    Có (2 stages)     Tối ưu dung lượng
 .dockerignore     Không có           Có sử dụng        Build sạch hơn   
 Layer Caching     Kém (Copy toàn bộ) Tốt (Tách deps)   Build lần 2 nhanh
@@ -21,11 +21,11 @@ Bảo mật (User)    root (Nguy hiểm)   appuser (An toàn) Bảo mật hơn
 CREATED BY                                      SIZE
 CMD ["uvicorn" "inventory_service.app.main:a…   0B
 ENV PYTHONPATH=/app/inventory_service           0B
-EXPOSE &{[{{16 0} {16 0}}] 0xc006b00e00}        0B
+EXPOSE [3002/tcp]                               0B
 RUN /bin/sh -c pip install -r inventory_serv…   126MB
 RUN /bin/sh -c apt-get install -y gcc python…   39.2MB
 RUN /bin/sh -c apt-get update # buildkit        21.2MB
-COPY . . # buildkit                             742MB
+COPY . . # buildkit                             552MB
 WORKDIR /app                                    8.19kB
 CMD ["python3"]                                 0B
 RUN /bin/sh -c set -eux;  for src in idle3 p…   16.4kB
@@ -45,7 +45,7 @@ RUN /bin/sh -c set -eux;  apt-get update;  a…   65MB
 --- CHI TIẾT CẤU TRÚC LAYER (BẢN ĐÃ TỐI ƯU) ---
 CREATED BY                                      SIZE
 CMD ["uvicorn" "app.main:app" "--host" "0.0.…   0B
-EXPOSE &{[{{37 0} {37 0}}] 0xc00131e3c0}        0B
+EXPOSE [3002/tcp]                               0B
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFER…   0B
 USER appuser                                    0B
 RUN /bin/sh -c chown -R appuser:appuser /app…   102kB
