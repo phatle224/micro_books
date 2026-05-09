@@ -10,7 +10,7 @@ on:
 
 env:
   # Chỉnh sửa ở đây: 'docker', 'k8s', hoặc 'both'
-  DEPLOY_TARGET: 'docker'
+  DEPLOY_TARGET: 'k8s'
 
 jobs:
   deploy:
