@@ -277,7 +277,7 @@ You can access the admin portal to manage the bookstore, orders, and monitor Kaf
 2. Order Service publishes an `order_created` event to the **Kafka topic**.
 3. **Inventory Service** subscribes to the topic and receives the event.
 4. Inventory Service automatically deducts stock for the corresponding book in MongoDB Atlas.
-5. All broker activity can be monitored real-time via **Kafka UI** at `localhost:8080` or the `/admin/kafka` page.
+5. All broker activity can be monitored real-time via **Kafka UI** at `localhost:8080` or the `/admin/kafka` page..
 
 ## 📊 Kafka Monitoring
 
