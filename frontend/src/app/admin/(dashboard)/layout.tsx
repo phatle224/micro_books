@@ -36,7 +36,7 @@ export default function AdminLayout({
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    
+
     // Also clear storefront session
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
@@ -54,10 +54,10 @@ export default function AdminLayout({
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2">
             <Star className="w-6 h-6 fill-black text-black" />
-            <span className="text-xl font-semibold tracking-tight">MicroBooks Admin</span>
+            <span className="text-xl font-semibold tracking-tight">MicroBooks Admin123</span>
           </Link>
         </div>
-        
+
         <nav className="flex-1 px-4 space-y-1 mt-4">
           <Link href="/admin" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-black transition-colors">
             <LayoutDashboard className="w-5 h-5" /> Dashboard
@@ -72,7 +72,7 @@ export default function AdminLayout({
             <Activity className="w-5 h-5" /> Kafka Monitor
           </Link>
         </nav>
-        
+
         <div className="p-4 border-t border-gray-200 space-y-2">
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors">
             <LogOut className="w-5 h-5" /> Logout

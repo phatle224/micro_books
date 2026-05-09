@@ -8,3 +8,6 @@ docker build -t inventory:optimized -f docker_optimization/Dockerfile.optimized 
 
 Chạy unoptimized 
 docker build -t inventory:unoptimized -f docker_optimization/Dockerfile.unoptimized .
+
+
+chcp 65001; powershell -ExecutionPolicy Bypass -File "D:\SGU\CCNLTHD\MicroBooks\docker_optimization\benchmark.ps1"
