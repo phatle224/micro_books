@@ -18,6 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      </head>
       <body
         className={`${inter.variable} font-sans antialiased bg-white text-black`}
       >

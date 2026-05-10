@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldAlert, ArrowRight } from "lucide-react";
+import Turnstile from "@/components/storefront/Turnstile";
 
 export default function AdminLogin() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +20,7 @@ export default function AdminLogin() {
     fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ ...formData, captcha_token: captchaToken }),
     })
       .then(async (res) => {
         if (!res.ok) {
@@ -86,9 +88,13 @@ export default function AdminLogin() {
               />
             </div>
             
+            <div className="flex justify-center py-2">
+              <Turnstile onVerify={useCallback((token: string) => setCaptchaToken(token), [])} />
+            </div>
+            
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || !captchaToken}
               className="w-full bg-black text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 pt-1"
             >
               {loading ? "Authenticating..." : "Access Dashboard"}

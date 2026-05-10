@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo CAPTCHA</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+  <h1>Form liên hệ</h1>
+
+  <form action="/submit" method="POST">
+    <label for="name">Tên</label><br />
+    <input id="name" type="text" name="name" required />
+    <br /><br />
+
+    <label for="email">Email</label><br />
+    <input id="email" type="email" name="email" required />
+    <br /><br />
+
+    <div class="cf-turnstile" data-sitekey="SITE_KEY_FROM_ENV"></div>
+    <br /><br />
+
+    <button type="submit">Gửi form</button>
+  </form>
+</body>
+</html>

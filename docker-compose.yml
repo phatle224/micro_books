@@ -49,6 +49,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@microbooks.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       ADMIN_NAME: ${ADMIN_NAME:-MicroBooks Admin}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
       # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
       WATCHFILES_FORCE_POLLING: "true"
       OTEL_ENABLED: "true"
@@ -119,6 +120,7 @@ services:
     environment:
       ORDER_SERVICE_URL: http://order_service:3001
       INVENTORY_SERVICE_URL: http://inventory_service:3002
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
       # Kích hoạt Polling cho Next.js/Webpack
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"

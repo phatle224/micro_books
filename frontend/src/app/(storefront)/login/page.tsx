@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import Turnstile from "@/components/storefront/Turnstile";
 
 export default function UserLogin() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function UserLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +26,7 @@ export default function UserLogin() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, captcha_token: captchaToken }),
       });
 
       if (!res.ok) {
@@ -90,9 +92,13 @@ export default function UserLogin() {
             />
           </div>
           
+          <div className="flex justify-center py-2">
+            <Turnstile onVerify={useCallback((token: string) => setCaptchaToken(token), [])} />
+          </div>
+          
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-black text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
           >
             {loading ? "Signing in..." : "Sign in"}
