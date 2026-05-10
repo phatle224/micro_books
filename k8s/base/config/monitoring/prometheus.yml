@@ -1,68 +1,68 @@
-global:
-  scrape_interval: 10s
-  evaluation_interval: 10s
+global: # Cấu hình chung cho toàn bộ Prometheus
+  scrape_interval: 10s # Thời gian mặc định giữa các lần đi lấy dữ liệu (10 giây)
+  evaluation_interval: 10s # Thời gian mặc định để đánh giá các quy tắc cảnh báo
 
-scrape_configs:
-  - job_name: otel-collector
+scrape_configs: # Danh sách các mục tiêu cần thu thập dữ liệu (Metrics)
+  - job_name: otel-collector # Thu thập dữ liệu từ OpenTelemetry Collector
     static_configs:
-      - targets: ["otel-collector:8889"]
+      - targets: ["otel-collector:8889"] # Địa chỉ Collector
 
-  - job_name: prometheus
+  - job_name: prometheus # Thu thập dữ liệu từ chính Prometheus (Tự giám sát)
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: loki
+  - job_name: loki # Thu thập dữ liệu từ Loki
     static_configs:
       - targets: ["loki:3100"]
 
-  - job_name: tempo
+  - job_name: tempo # Thu thập dữ liệu từ Tempo
     static_configs:
       - targets: ["tempo:3200"]
 
-  - job_name: kube-state-metrics
-    scrape_interval: 5s
+  - job_name: kube-state-metrics # Thu thập thông tin trạng thái Cluster
+    scrape_interval: 5s # Quét nhanh hơn (5 giây) vì đây là dữ liệu quan trọng
     static_configs:
-      - targets: ["kube-state-metrics.microbooks.svc.cluster.local:8080"]
+      - targets: ["kube-state-metrics.microbooks.svc.cluster.local:8080"] # Địa chỉ FQDN của service
 
-  # cAdvisor: scrape container CPU/Memory metrics from each node via k8s API proxy
+  # cAdvisor: Thu thập metrics CPU/RAM của container trực tiếp từ các nút thông qua API của Kubernetes
   - job_name: kubernetes-cadvisor
-    scheme: https
-    tls_config:
+    scheme: https # Sử dụng giao thức HTTPS bảo mật
+    tls_config: # Cấu hình chứng chỉ bảo mật
       ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-      insecure_skip_verify: true
-    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-    kubernetes_sd_configs:
-      - role: node
-    relabel_configs:
-      - action: labelmap
+      insecure_skip_verify: true # Bỏ qua xác thực chứng chỉ (thường dùng trong Cluster nội bộ)
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token # Sử dụng Token của ServiceAccount để xác thực
+    kubernetes_sd_configs: # Cơ chế tự động phát hiện mục tiêu (Service Discovery)
+      - role: node # Tự động tìm tất cả các nút (nodes) trong cụm
+    relabel_configs: # Các quy tắc biến đổi nhãn và địa chỉ truy vấn
+      - action: labelmap # Chuyển đổi nhãn của node thành nhãn của Prometheus
         regex: __meta_kubernetes_node_label_(.+)
       - target_label: __address__
-        replacement: kubernetes.default.svc:443
+        replacement: kubernetes.default.svc:443 # Chuyển hướng yêu cầu tới API Server
       - source_labels: [__meta_kubernetes_node_name]
         regex: (.+)
         target_label: __metrics_path__
-        replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+        replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor # Đường dẫn proxy để lấy data từ cAdvisor
 
-  # Scrape pod metrics annotations in microbooks namespace
+  # Tự động quét Metrics từ các Pod có đánh dấu (Annotations) trong namespace microbooks
   - job_name: kubernetes-pods
     kubernetes_sd_configs:
-      - role: pod
+      - role: pod # Tự động tìm tất cả các Pod
         namespaces:
-          names: [microbooks]
+          names: [microbooks] # Chỉ tìm trong namespace 'microbooks'
     relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape] # Kiểm tra annotation 'prometheus.io/scrape'
+        action: keep # Chỉ giữ lại những Pod có giá trị là "true"
         regex: "true"
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path] # Lấy đường dẫn metrics từ annotation
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port] # Lấy cổng từ annotation
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
         target_label: __address__
-      - action: labelmap
+      - action: labelmap # Sao chép tất cả các nhãn của Pod sang nhãn của Prometheus
         regex: __meta_kubernetes_pod_label_(.+)
       - source_labels: [__meta_kubernetes_namespace]
         action: replace

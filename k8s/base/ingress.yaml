@@ -1,19 +1,19 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: microbooks-ingress
-  namespace: microbooks
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  rules:
-  - host: microbooks.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend
-            port:
-              number: 3000
+apiVersion: networking.k8s.io/v1 # Phiên bản API hỗ trợ các tính năng mạng (Ingress)
+kind: Ingress # Loại tài nguyên Ingress (dùng để điều hướng traffic từ bên ngoài vào các service bên trong)
+metadata: # Thông tin mô tả
+  name: microbooks-ingress # Tên của Ingress
+  namespace: microbooks # Namespace mà Ingress này thuộc về
+  annotations: # Các cấu hình bổ sung cho Ingress Controller (ở đây là Nginx)
+    nginx.ingress.kubernetes.io/rewrite-target: / # Quy tắc viết lại URL (đưa về gốc /)
+spec: # Định nghĩa các quy tắc định tuyến
+  rules: # Danh sách các quy tắc dựa trên host hoặc path
+  - host: microbooks.local # Tên miền ảo để truy cập (cần cấu hình file hosts trên máy)
+    http: # Giao thức HTTP
+      paths: # Các đường dẫn cụ thể
+      - path: / # Áp dụng cho tất cả các đường dẫn bắt đầu từ gốc
+        pathType: Prefix # Kiểu so khớp tiền tố (mọi thứ sau / đều được tính)
+        backend: # Dịch vụ đích ở phía sau
+          service: # Chỉ định Service cụ thể
+            name: frontend # Tên của service Frontend
+            port: # Cổng của service đó
+              number: 3000 # Cổng 3000 (cổng của Next.js)

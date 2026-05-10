@@ -1,32 +1,32 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: promtail
-  namespace: microbooks
+apiVersion: v1 # Phiên bản API cơ bản
+kind: ServiceAccount # Tạo tài khoản định danh cho Promtail (Agent thu thập log)
+metadata: 
+  name: promtail # Tên tài khoản
+  namespace: microbooks # Đặt trong namespace microbooks
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: promtail-clusterrole
-rules:
-  - apiGroups: [""]
-    resources:
-      - nodes
-      - nodes/proxy
-      - services
-      - endpoints
-      - pods
-    verbs: ["get", "list", "watch"]
+apiVersion: rbac.authorization.k8s.io/v1 # Phiên bản API phân quyền
+kind: ClusterRole # Vai trò cấp Cluster để Promtail có thể đọc thông tin trên toàn cụm
+metadata: 
+  name: promtail-clusterrole # Tên vai trò
+rules: # Quy tắc cho phép Promtail khám phá các dịch vụ và Pod để lấy log
+  - apiGroups: [""] # Nhóm tài nguyên Core
+    resources: 
+      - nodes # Đọc thông tin máy chủ
+      - nodes/proxy # Truy cập qua proxy nút
+      - services # Liệt kê dịch vụ
+      - endpoints # Tìm địa chỉ IP của các đầu cuối dịch vụ
+      - pods # Tìm các Pod đang chạy để định vị file log
+    verbs: ["get", "list", "watch"] # Quyền xem và theo dõi sự thay đổi
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Liên kết vai trò với tài khoản
 kind: ClusterRoleBinding
-metadata:
-  name: promtail-clusterrolebinding
-roleRef:
+metadata: 
+  name: promtail-clusterrolebinding # Tên liên kết
+roleRef: # Tham chiếu tới vai trò ClusterRole đã tạo ở trên
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: promtail-clusterrole
-subjects:
+subjects: # Gán vai trò cho tài khoản ServiceAccount của Promtail
   - kind: ServiceAccount
     name: promtail
     namespace: microbooks

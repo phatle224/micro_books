@@ -1,39 +1,39 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus
-  namespace: microbooks
+apiVersion: v1 # Phiên bản API cơ bản
+kind: ServiceAccount # Tạo tài khoản định danh cho Prometheus
+metadata: 
+  name: prometheus # Tên tài khoản
+  namespace: microbooks # Đặt trong namespace microbooks
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: prometheus
-rules:
-  - apiGroups: [""]
-    resources:
-      - nodes
-      - nodes/proxy
-      - nodes/metrics
-      - services
-      - endpoints
-      - pods
+apiVersion: rbac.authorization.k8s.io/v1 # Phiên bản API phân quyền
+kind: ClusterRole # Vai trò cấp Cluster (có quyền truy cập trên toàn bộ Cluster)
+metadata: 
+  name: prometheus # Tên vai trò
+rules: # Danh sách các quy tắc cho phép Prometheus thu thập dữ liệu
+  - apiGroups: [""] # Nhóm tài nguyên cốt lõi (Core)
+    resources: 
+      - nodes # Đọc thông tin các nút (máy chủ)
+      - nodes/proxy # Truy cập qua proxy của nút
+      - nodes/metrics # Lấy thông số metrics từ nút
+      - services # Liệt kê các dịch vụ để quét (scrape)
+      - endpoints # Lấy danh sách IP của các Pod đứng sau Service
+      - pods # Liệt kê các Pod để quét metrics trực tiếp
+    verbs: ["get", "list", "watch"] # Chỉ cho phép xem, không cho phép sửa đổi
+  - apiGroups: ["extensions", "networking.k8s.io"] # Nhóm tài nguyên mạng
+    resources: 
+      - ingresses # Đọc cấu hình Ingress
     verbs: ["get", "list", "watch"]
-  - apiGroups: ["extensions", "networking.k8s.io"]
-    resources:
-      - ingresses
-    verbs: ["get", "list", "watch"]
-  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
-    verbs: ["get"]
+  - nonResourceURLs: ["/metrics", "/metrics/cadvisor"] # Các đường dẫn URL đặc biệt cung cấp metrics
+    verbs: ["get"] # Cho phép truy cập lấy dữ liệu
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Liên kết vai trò với tài khoản
 kind: ClusterRoleBinding
-metadata:
-  name: prometheus
-roleRef:
+metadata: 
+  name: prometheus # Tên liên kết
+roleRef: # Tham chiếu tới vai trò Prometheus đã định nghĩa ở trên
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: prometheus
-subjects:
+subjects: # Gán vai trò này cho tài khoản ServiceAccount của Prometheus
   - kind: ServiceAccount
     name: prometheus
     namespace: microbooks

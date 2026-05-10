@@ -1,217 +1,236 @@
-services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: microbooks-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+services: # Khởi đầu định nghĩa các dịch vụ (containers) trong hệ thống
+  # --- HỆ THỐNG MESSAGE BROKER (KAFKA) ---
+  
+  # Zookeeper: "Người điều phối" cho Kafka, quản lý các broker và cấu hình
+  zookeeper: # Tên dịch vụ Zookeeper
+    image: confluentinc/cp-zookeeper:7.5.0 # Tải bộ cài Zookeeper bản 7.5.0 từ Docker Hub
+    container_name: microbooks-zookeeper # Đặt tên cố định cho container để dễ quản lý
+    environment: # Khai báo các biến môi trường cấu hình cho Zookeeper
+      ZOOKEEPER_CLIENT_PORT: 2181 # Cổng mà các client (như Kafka) sẽ kết nối tới
+      ZOOKEEPER_TICK_TIME: 2000 # Đơn vị thời gian cơ bản (ms) dùng cho heartbeat và timeout
+    ports: # Ánh xạ cổng từ container ra máy host
+      - "2181:2181" # Kết nối cổng 2181 của máy host vào cổng 2181 của container
 
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: microbooks-kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
-    restart: unless-stopped
+  # Kafka: Hệ thống truyền tin nhắn giữa các Microservices
+  kafka: # Tên dịch vụ Kafka
+    image: confluentinc/cp-kafka:7.5.0 # Sử dụng image Kafka bản 7.5.0 của Confluent
+    container_name: microbooks-kafka # Tên container Kafka
+    depends_on: # Ràng buộc khởi chạy
+      - zookeeper # Kafka cần Zookeeper chạy trước để quản lý metadata
+    ports: # Ánh xạ cổng kết nối
+      - "9092:9092" # Cổng kết nối chính của Kafka cho các ứng dụng bên ngoài
+    environment: # Cấu hình các thông số vận hành cho Kafka
+      KAFKA_BROKER_ID: 1 # Định danh duy nhất của broker trong cụm
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Chỉ đường cho Kafka tìm thấy Zookeeper
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # Địa chỉ mà Kafka thông báo cho client để kết nối tới
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT # Định nghĩa giao thức bảo mật (ở đây là không mã hóa)
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT # Tên listener dùng để các broker giao tiếp với nhau
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # Số bản sao của topic offset (1 là đủ cho môi trường dev)
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # Cho phép tự động tạo topic khi có tin nhắn gửi đến
+    healthcheck: # Kiểm tra trạng thái sức khỏe của container
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"] # Lệnh kiểm tra Kafka đã sẵn sàng chưa
+      interval: 10s # Tần suất kiểm tra (mỗi 10 giây)
+      timeout: 10s # Thời gian chờ tối đa cho mỗi lần kiểm tra
+      retries: 10 # Số lần thử lại trước khi coi container là không khỏe mạnh
+      start_period: 30s # Thời gian chờ ban đầu trước khi bắt đầu kiểm tra sức khỏe
+    restart: unless-stopped # Luôn khởi động lại container trừ khi bị dừng chủ động
 
-  order_service:
-    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-order-service:latest
-    build:
-      context: ./order_service
-      dockerfile: Dockerfile
-    container_name: microbooks-order-service
-    ports:
-      - "${ORDER_SERVICE_PORT:-3001}:3001"
-    environment:
-      MONGO_URI: ${MONGO_URI}
-      KAFKA_BROKER: kafka:9092
-      SERVICE_PORT: 3001
-      INVENTORY_SERVICE_URL: http://inventory_service:3002
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change}
-      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@microbooks.com}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
-      ADMIN_NAME: ${ADMIN_NAME:-MicroBooks Admin}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
-      # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
-      WATCHFILES_FORCE_POLLING: "true"
-      OTEL_ENABLED: "true"
-      OTEL_SERVICE_NAME: order-service
-      OTEL_SERVICE_NAMESPACE: microbooks
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-    volumes:
-      - ./order_service:/app
-    depends_on:
-      kafka:
-        condition: service_healthy
-      otel-collector:
-        condition: service_started
-    command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload
-    restart: unless-stopped
+  # --- CÁC BACKEND MICROSERVICES ---
 
-  inventory_service:
-    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-inventory-service:latest
-    build:
-      context: ./inventory_service
-      dockerfile: Dockerfile
-    container_name: microbooks-inventory-service
-    ports:
-      - "${INVENTORY_SERVICE_PORT:-3002}:3002"
-    environment:
-      MONGO_URI: ${MONGO_URI}
-      KAFKA_BROKER: kafka:9092
-      SERVICE_PORT: 3002
-      # Ép Uvicorn sử dụng cơ chế polling để nhận diện file thay đổi trên Windows
-      WATCHFILES_FORCE_POLLING: "true"
-      OTEL_ENABLED: "true"
-      OTEL_SERVICE_NAME: inventory-service
-      OTEL_SERVICE_NAMESPACE: microbooks
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-    volumes:
-      - ./inventory_service:/app
-    depends_on:
-      kafka:
-        condition: service_healthy
-      otel-collector:
-        condition: service_started
-    command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload
-    restart: unless-stopped
+  # Dịch vụ Quản lý Đơn hàng (Order Service)
+  order_service: # Tên dịch vụ xử lý đơn hàng
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-order-service:latest # Đường dẫn image trên Docker Hub (sử dụng biến môi trường)
+    build: # Cấu hình để xây dựng image từ mã nguồn cục bộ
+      context: ./order_service # Thư mục chứa mã nguồn của dịch vụ
+      dockerfile: Dockerfile # Tên file hướng dẫn xây dựng image
+    container_name: microbooks-order-service # Tên container Order Service
+    ports: # Ánh xạ cổng dịch vụ
+      - "${ORDER_SERVICE_PORT:-3001}:3001" # Cổng truy cập từ máy host (mặc định 3001)
+    environment: # Các biến môi trường cho ứng dụng
+      MONGO_URI: ${MONGO_URI} # Chuỗi kết nối tới cơ sở dữ liệu MongoDB
+      KAFKA_BROKER: kafka:9092 # Địa chỉ server Kafka để gửi/nhận tin nhắn
+      SERVICE_PORT: 3001 # Cổng mà ứng dụng bên trong container lắng nghe
+      INVENTORY_SERVICE_URL: http://inventory_service:3002 # URL gọi sang dịch vụ kho hàng
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change} # Khóa bí mật để xác thực token người dùng
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440} # Thời gian hết hạn của token
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@microbooks.com} # Email quản trị viên mặc định
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123} # Mật khẩu quản trị viên mặc định
+      ADMIN_NAME: ${ADMIN_NAME:-MicroBooks Admin} # Tên hiển thị của quản trị viên
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY} # Khóa bí mật cho dịch vụ chống bot của Cloudflare
+      WATCHFILES_FORCE_POLLING: "true" # Ép buộc sử dụng cơ chế polling để nhận diện thay đổi file trên Windows
+      OTEL_ENABLED: "true" # Kích hoạt tính năng OpenTelemetry để giám sát
+      OTEL_SERVICE_NAME: order-service # Tên dịch vụ hiển thị trong hệ thống giám sát
+      OTEL_SERVICE_NAMESPACE: microbooks # Không gian tên cho các dịch vụ của dự án
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318 # Nơi gửi dữ liệu giám sát về
+    volumes: # Gắn kết thư mục giữa máy host và container
+      - ./order_service:/app # Đồng bộ code để hỗ trợ tính năng hot-reload khi lập trình
+    depends_on: # Các dịch vụ cần có trước khi khởi động
+      kafka: # Cần Kafka sẵn sàng
+        condition: service_healthy # Đợi Kafka vượt qua bài kiểm tra sức khỏe
+      otel-collector: # Cần trạm thu thập dữ liệu giám sát
+        condition: service_started # Chỉ cần dịch vụ đã bắt đầu chạy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload # Lệnh khởi chạy ứng dụng FastAPI với tính năng tự tải lại
+    restart: unless-stopped # Tự khởi động lại khi gặp lỗi
 
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: microbooks-kafka-ui
-    ports:
-      - "8080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: microbooks-cluster
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-      DYNAMIC_CONFIG_ENABLED: "true"
-    depends_on:
-      kafka:
-        condition: service_healthy
-    restart: unless-stopped
+  # Dịch vụ Quản lý Kho hàng (Inventory Service)
+  inventory_service: # Tên dịch vụ quản lý kho
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-inventory-service:latest # Image cho Inventory Service
+    build: # Xây dựng từ source code
+      context: ./inventory_service # Đường dẫn tới source code kho hàng
+      dockerfile: Dockerfile # File build Docker
+    container_name: microbooks-inventory-service # Tên container
+    ports: # Public cổng ra bên ngoài
+      - "${INVENTORY_SERVICE_PORT:-3002}:3002" # Cổng mặc định là 3002
+    environment: # Các tham số cấu hình môi trường
+      MONGO_URI: ${MONGO_URI} # Kết nối DB
+      KAFKA_BROKER: kafka:9092 # Kết nối Message Broker
+      SERVICE_PORT: 3002 # Cổng dịch vụ bên trong
+      WATCHFILES_FORCE_POLLING: "true" # Hỗ trợ reload code trên Windows
+      OTEL_ENABLED: "true" # Bật giám sát
+      OTEL_SERVICE_NAME: inventory-service # Tên định danh giám sát
+      OTEL_SERVICE_NAMESPACE: microbooks # Namespace chung
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318 # Địa chỉ nhận dữ liệu log/trace
+    volumes: # Đồng bộ dữ liệu
+      - ./inventory_service:/app # Gắn code vào thư mục làm việc của container
+    depends_on: # Phụ thuộc vào các dịch vụ nền tảng
+      kafka: # Phụ thuộc Kafka
+        condition: service_healthy # Đợi Kafka sống hẳn mới chạy
+      otel-collector: # Phụ thuộc Collector
+        condition: service_started # Đợi Collector khởi động
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload # Lệnh chạy Python backend
+    restart: unless-stopped # Cơ chế khởi động lại tự động
 
-  frontend:
-    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-frontend:latest
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: microbooks-frontend
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      ORDER_SERVICE_URL: http://order_service:3001
-      INVENTORY_SERVICE_URL: http://inventory_service:3002
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
-      # Kích hoạt Polling cho Next.js/Webpack
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    depends_on:
-      - order_service
-      - inventory_service
-    command: npm run dev -- --hostname 0.0.0.0 --webpack
-    restart: unless-stopped
+  # --- CÔNG CỤ QUẢN LÝ VÀ GIAO DIỆN ---
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.100.0
-    container_name: microbooks-otel-collector
-    command: ["--config=/etc/otelcol-contrib/config.yml"]
-    volumes:
-      - ./monitoring/otel-collector-config.yml:/etc/otelcol-contrib/config.yml
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8889:8889"
-    depends_on:
-      - tempo
-      - loki
+  # Giao diện web để xem và quản lý Kafka (Cổng 8080)
+  kafka-ui: # Dịch vụ giao diện quản lý Kafka
+    image: provectuslabs/kafka-ui:latest # Sử dụng bản mới nhất của Kafka UI
+    container_name: microbooks-kafka-ui # Tên container quản lý
+    ports: # Mở cổng web
+      - "8080:8080" # Truy cập UI tại localhost:8080
+    environment: # Cấu hình kết nối tới Kafka Cluster
+      KAFKA_CLUSTERS_0_NAME: microbooks-cluster # Tên cụm Kafka hiển thị trên giao diện
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # Địa chỉ server Kafka để lấy dữ liệu
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181 # Địa chỉ Zookeeper đi kèm
+      DYNAMIC_CONFIG_ENABLED: "true" # Cho phép thay đổi cấu hình trực tiếp từ giao diện
+    depends_on: # Phụ thuộc vào Kafka
+      kafka: # Đợi Kafka
+        condition: service_healthy # Chỉ chạy khi Kafka đã sẵn sàng nhận kết nối
+    restart: unless-stopped # Tự động chạy lại nếu crash
 
-  prometheus:
-    image: prom/prometheus:v2.53.0
-    container_name: microbooks-prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--web.enable-remote-write-receiver"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    depends_on:
-      - otel-collector
+  # Ứng dụng Giao diện người dùng (Frontend - Next.js)
+  frontend: # Dịch vụ Frontend web
+    image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-frontend:latest # Image của Frontend
+    build: # Build từ source frontend
+      context: ./frontend # Thư mục source
+      dockerfile: Dockerfile # File hướng dẫn build
+    container_name: microbooks-frontend # Tên container frontend
+    ports: # Phơi cổng truy cập
+      - "${FRONTEND_PORT:-3000}:3000" # Truy cập web tại localhost:3000
+    environment: # Các biến cấu hình cho React/Next.js
+      ORDER_SERVICE_URL: http://order_service:3001 # Endpoint gọi API đặt hàng
+      INVENTORY_SERVICE_URL: http://inventory_service:3002 # Endpoint gọi API kho hàng
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY} # Khóa công khai cho Captcha (phía client)
+      WATCHPACK_POLLING: "true" # Cơ chế theo dõi thay đổi file cho Webpack trên Windows
+      CHOKIDAR_USEPOLLING: "true" # Cơ chế theo dõi file cho các tool build khác
+    volumes: # Mount các thư mục quan trọng
+      - ./frontend:/app # Mount code để dev
+      - /app/node_modules # Giữ lại các thư viện cài đặt trong container (không bị đè bởi host)
+      - /app/.next # Giữ thư mục cache build của Next.js
+    depends_on: # Phụ thuộc vào các backend API
+      - order_service # Cần dịch vụ đơn hàng
+      - inventory_service # Cần dịch vụ kho hàng
+    command: npm run dev -- --hostname 0.0.0.0 --webpack # Chạy môi trường phát triển Next.js
+    restart: unless-stopped # Luôn sẵn sàng hoạt động
 
-  grafana:
-    image: grafana/grafana:11.1.0
-    container_name: microbooks-grafana
-    ports:
-      - "3005:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-    depends_on:
-      - prometheus
-      - loki
-      - tempo
+  # --- HỆ THỐNG GIÁM SÁT (MONITORING STACK) ---
 
-  loki:
-    image: grafana/loki:3.1.0
-    container_name: microbooks-loki
-    command: -config.file=/etc/loki/loki-config.yml
-    volumes:
-      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
+  # Trạm thu thập dữ liệu quan sát (OpenTelemetry Collector)
+  otel-collector: # Trạm trung chuyển dữ liệu giám sát
+    image: otel/opentelemetry-collector-contrib:0.100.0 # Image collector với nhiều tính năng mở rộng
+    container_name: microbooks-otel-collector # Tên container
+    command: ["--config=/etc/otelcol-contrib/config.yml"] # Chạy với file cấu hình chỉ định
+    volumes: # Gắn file cấu hình từ máy host
+      - ./monitoring/otel-collector-config.yml:/etc/otelcol-contrib/config.yml # File định nghĩa cách nhận và đẩy dữ liệu
+    ports: # Các cổng giao tiếp của collector
+      - "4317:4317" # Nhận dữ liệu Trace/Log qua gRPC
+      - "4318:4318" # Nhận dữ liệu Trace/Log qua HTTP
+      - "8889:8889" # Cổng export dữ liệu Metrics cho Prometheus
+    depends_on: # Phụ thuộc vào nơi lưu trữ dữ liệu cuối
+      - tempo # Cần Tempo để lưu trace
+      - loki # Cần Loki để lưu log
 
-  promtail:
-    image: grafana/promtail:3.1.0
-    container_name: microbooks-promtail
-    command: -config.file=/etc/promtail/promtail-config.yml
-    volumes:
-      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - loki
+  # Prometheus: Nơi lưu trữ thông số hệ thống (Metrics)
+  prometheus: # Hệ thống giám sát chỉ số (CPU, RAM, Request rate...)
+    image: prom/prometheus:v2.53.0 # Phiên bản Prometheus ổn định
+    container_name: microbooks-prometheus # Tên container
+    command: # Cấu hình tham số khởi chạy
+      - "--config.file=/etc/prometheus/prometheus.yml" # Đường dẫn file cấu hình thu thập dữ liệu
+      - "--web.enable-remote-write-receiver" # Cho phép nhận dữ liệu từ các nguồn bên ngoài gửi tới
+    volumes: # Lưu trữ cấu hình và dữ liệu
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml # File cấu hình quét (scraping) các dịch vụ
+      - prometheus_data:/prometheus # Volume để lưu trữ dữ liệu metrics theo thời gian
+    ports: # Cổng giao diện Prometheus
+      - "9090:9090" # Truy cập để truy vấn dữ liệu thô tại localhost:9090
+    depends_on: # Đợi dữ liệu từ collector
+      - otel-collector # Prometheus sẽ lấy dữ liệu từ đây
 
-  tempo:
-    image: grafana/tempo:2.5.0
-    container_name: microbooks-tempo
-    command: ["-config.file=/etc/tempo/tempo.yml"]
-    volumes:
-      - ./monitoring/tempo.yml:/etc/tempo/tempo.yml
-      - tempo_data:/var/tempo
-    ports:
-      - "3200:3200"
+  # Grafana: "Bảng điều khiển" tổng hợp (Dashboard)
+  grafana: # Công cụ trực quan hóa dữ liệu (vẽ biểu đồ)
+    image: grafana/grafana:11.1.0 # Phiên bản Grafana mới
+    container_name: microbooks-grafana # Tên container
+    ports: # Phơi cổng truy cập giao diện
+      - "3005:3000" # Truy cập trang Dashboard tại localhost:3005
+    environment: # Cấu hình bảo mật ban đầu
+      GF_SECURITY_ADMIN_USER: admin # Tên đăng nhập mặc định
+      GF_SECURITY_ADMIN_PASSWORD: admin # Mật khẩu mặc định
+      GF_USERS_ALLOW_SIGN_UP: "false" # Tắt tính năng tự đăng ký tài khoản mới
+    volumes: # Lưu trữ và cấu hình tự động
+      - grafana_data:/var/lib/grafana # Lưu trữ các dashboard bạn tự tạo
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning # Tự động cấu hình các nguồn dữ liệu (Prometheus, Loki, Tempo)
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards # Tự động nạp các mẫu biểu đồ có sẵn trong dự án
+    depends_on: # Phụ thuộc vào các nguồn dữ liệu
+      - prometheus # Cần lấy Metrics
+      - loki # Cần lấy Logs
+      - tempo # Cần lấy Traces
+    restart: unless-stopped # Đảm bảo Dashboard luôn chạy
 
-volumes:
-  grafana_data:
-  prometheus_data:
-  tempo_data:
-  loki_data:
+  # Loki: Nơi lưu trữ Logs tập trung
+  loki: # Hệ thống lưu trữ và truy vấn Log tập trung
+    image: grafana/loki:3.1.0 # Sử dụng bản Loki v3
+    container_name: microbooks-loki # Tên container
+    command: -config.file=/etc/loki/loki-config.yml # Chạy với file cấu hình quy định cách lưu log
+    volumes: # Mount cấu hình và nơi lưu log
+      - ./monitoring/loki-config.yml:/etc/loki/loki-config.yml # Cấu hình retention, storage...
+      - loki_data:/loki # Nơi lưu trữ dữ liệu log bền vững
+    ports: # Cổng kết nối
+      - "3100:3100" # Cổng API của Loki
+
+  # Promtail: Thu thập logs từ các container khác và đẩy về Loki
+  promtail: # Đại lý (agent) đi gom log từ các container Docker
+    image: grafana/promtail:3.1.0 # Phiên bản đồng bộ với Loki
+    container_name: microbooks-promtail # Tên container
+    command: -config.file=/etc/promtail/promtail-config.yml # Chỉ định file cấu hình cách quét log
+    volumes: # Quyền truy cập để lấy log
+      - ./monitoring/promtail-config.yml:/etc/promtail/promtail-config.yml # Cấu hình các nhãn (labels) cho log
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Đọc thông tin các container đang chạy trên máy (quyền chỉ đọc)
+    depends_on: # Cần nơi để đẩy log về
+      - loki # Đợi Loki sẵn sàng nhận log
+
+  # Tempo: Theo dõi luồng request xuyên suốt (Distributed Tracing)
+  tempo: # Hệ thống theo dõi vết (Trace) của các request
+    image: grafana/tempo:2.5.0 # Phiên bản Tempo
+    container_name: microbooks-tempo # Tên container
+    command: ["-config.file=/etc/tempo/tempo.yml"] # Chạy với file cấu hình trace
+    volumes: # Mount cấu hình và nơi lưu vết
+      - ./monitoring/tempo.yml:/etc/tempo/tempo.yml # Cấu hình giao thức nhận trace
+      - tempo_data:/var/tempo # Nơi lưu trữ các vết request
+    ports: # Cổng truy vấn trace
+      - "3200:3200" # Cổng giao tiếp chính của Tempo
+
+# Định nghĩa các vùng lưu trữ dữ liệu bền vững (không mất khi tắt container)
+volumes: # Khai báo các Volume để dữ liệu không bị xóa khi xóa container
+  grafana_data: # Lưu trữ dữ liệu cấu hình và dashboard của Grafana
+  prometheus_data: # Lưu trữ dữ liệu metrics lịch sử của Prometheus
+  tempo_data: # Lưu trữ dữ liệu trace của Tempo
+  loki_data: # Lưu trữ các tệp log của Loki

@@ -1,11 +1,11 @@
-apiVersion: 1
+apiVersion: 1 # Phiên bản cấu hình Provisioning của Grafana
 
-providers:
-  - name: microbooks
-    orgId: 1
-    folder: MicroBooks
-    type: file
-    disableDeletion: true
-    allowUiUpdates: true
-    options:
-      path: /var/lib/grafana/dashboards
+providers: # Danh sách các nguồn cung cấp Dashboard tự động
+  - name: microbooks # Tên của nhà cung cấp cấu hình
+    orgId: 1 # Định danh tổ chức trong Grafana (1 là mặc định)
+    folder: MicroBooks # Tên thư mục chứa biểu đồ trên giao diện Grafana
+    type: file # Loại nguồn là tệp tin cục bộ
+    disableDeletion: true # Không cho phép xóa các Dashboard này từ giao diện web
+    allowUiUpdates: true # Cho phép chỉnh sửa tạm thời trên giao diện (nhưng sẽ mất nếu container restart trừ khi lưu lại)
+    options: # Các tùy chọn bổ sung
+      path: /var/lib/grafana/dashboards # Đường dẫn bên trong container nơi Grafana sẽ quét các file JSON Dashboard

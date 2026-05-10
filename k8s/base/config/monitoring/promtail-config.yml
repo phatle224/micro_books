@@ -1,30 +1,30 @@
-server:
-  http_listen_port: 9080
-  grpc_listen_port: 0
+server: # Cấu hình server nội bộ của Promtail
+  http_listen_port: 9080 # Cổng lắng nghe HTTP
+  grpc_listen_port: 0 # Tắt lắng nghe gRPC
 
-positions:
+positions: # Lưu trữ vị trí cuối cùng đã đọc trong các file log để tránh đọc trùng
   filename: /tmp/positions.yaml
 
-clients:
-  - url: http://loki:3100/loki/api/v1/push
+clients: # Cấu hình nơi đẩy Log về
+  - url: http://loki:3100/loki/api/v1/push # Đẩy log về API của Loki
 
-scrape_configs:
-  - job_name: kubernetes-pods
+scrape_configs: # Cấu hình thu thập Log
+  - job_name: kubernetes-pods # Thu thập log từ các Pod trong Kubernetes
     static_configs:
-      - targets: [localhost]
+      - targets: [localhost] # Chạy trực tiếp trên máy chủ
         labels:
-          job: kubernetes
-          __path__: /var/log/pods/microbooks_*/*/*.log
-    pipeline_stages:
-      - docker: {}
-      - regex:
+          job: kubernetes # Nhãn định danh công việc
+          __path__: /var/log/pods/microbooks_*/*/*.log # Đường dẫn tới các tệp log của Pod thuộc namespace microbooks
+    pipeline_stages: # Các bước xử lý Log (Pipeline)
+      - docker: {} # Giải mã định dạng log mặc định của Docker (JSON)
+      - regex: # Sử dụng Regex để trích xuất thông tin từ tên file log
           source: filename
           expression: '/var/log/pods/(?P<namespace>[^_]+)_(?P<pod>.+)_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?P<container>[^/]+)/'
-      - labels:
-          namespace:
-          pod:
-          container:
-      - regex:
+      - labels: # Gán các thông tin trích xuất được thành nhãn (labels) trong Loki
+          namespace: # Không gian tên
+          pod: # Tên Pod
+          container: # Tên Container
+      - regex: # Trích xuất mức độ nghiêm trọng (Log Level) từ nội dung dòng log
           expression: '(?i)^(?P<level>ERROR|WARN|WARNING|INFO|DEBUG|CRITICAL)[:\s]'
-      - labels:
+      - labels: # Gán nhãn 'level' để dễ dàng lọc log theo lỗi (ERROR), cảnh báo (WARN)...
           level:

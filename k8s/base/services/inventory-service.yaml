@@ -1,75 +1,75 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: inventory-service
-  namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: inventory-service
-  template:
-    metadata:
-      labels:
-        app: inventory-service
-    spec:
-      containers:
-      - name: inventory-service
-        image: kietne1211/microbooks-inventory-service:latest
-        ports:
-        - containerPort: 3002
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3002
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3002
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-        env:
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              name: microbooks-secrets
-              key: MONGO_URI
-        - name: KAFKA_BROKER
-          valueFrom:
-            configMapKeyRef:
-              name: microbooks-config
-              key: KAFKA_BROKER
-        - name: SERVICE_PORT
-          value: "3002"
-        - name: OTEL_ENABLED
-          value: "true"
-        - name: OTEL_SERVICE_NAME
-          value: "inventory-service"
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          valueFrom:
-            configMapKeyRef:
-              name: microbooks-config
-              key: OTEL_EXPORTER_OTLP_ENDPOINT
+apiVersion: apps/v1 # Phiên bản API triển khai ứng dụng
+kind: Deployment # Quản lý triển khai các bản sao của ứng dụng
+metadata: # Thông tin mô tả
+  name: inventory-service # Tên của Deployment
+  namespace: microbooks # Triển khai trong namespace microbooks
+spec: # Cấu hình Deployment
+  replicas: 1 # Duy trì 1 bản sao Pod chạy ổn định
+  selector: # Chọn Pod theo nhãn
+    matchLabels: # Nhãn khớp chính xác
+      app: inventory-service # Tìm nhãn app=inventory-service
+  template: # Mẫu thiết kế Pod
+    metadata: # Thông tin cho Pod mới được tạo
+      labels: # Nhãn định danh cho Pod
+        app: inventory-service # Nhãn app=inventory-service
+    spec: # Đặc tả kỹ thuật Pod
+      containers: # Danh sách container trong Pod
+      - name: inventory-service # Tên container dịch vụ kho
+        image: kietne1211/microbooks-inventory-service:latest # Image ứng dụng từ Docker Hub
+        ports: # Cổng mở trên container
+        - containerPort: 3002 # Container lắng nghe trên cổng 3002
+        livenessProbe: # Kiểm tra định kỳ để tự khởi động lại nếu app bị treo
+          httpGet: # Gửi request HTTP GET để check
+            path: /health # Endpoint kiểm tra sức khỏe
+            port: 3002 # Cổng kiểm tra
+          initialDelaySeconds: 10 # Đợi 10 giây sau khi chạy mới check lần đầu
+          periodSeconds: 10 # Kiểm tra mỗi 10 giây một lần
+        readinessProbe: # Kiểm tra xem app đã sẵn sàng nhận request chưa
+          httpGet: # Gửi request HTTP GET
+            path: /health # Endpoint sẵn sàng
+            port: 3002 # Cổng kiểm tra
+          initialDelaySeconds: 5 # Đợi 5 giây sau khi chạy mới check lần đầu
+          periodSeconds: 5 # Kiểm tra mỗi 5 giây
+        resources: # Kiểm soát tài nguyên CPU/RAM
+          limits: # Giới hạn tối đa không được vượt quá
+            cpu: "500m" # Tối đa 0.5 CPU
+            memory: "256Mi" # Tối đa 256MB RAM
+          requests: # Mức tài nguyên dành riêng khi khởi động
+            cpu: "100m" # Yêu cầu 0.1 CPU
+            memory: "128Mi" # Yêu cầu 128MB RAM
+        env: # Cấu hình biến môi trường
+        - name: MONGO_URI # Biến chuỗi kết nối Database
+          valueFrom: # Lấy từ Secret (thông tin nhạy cảm)
+            secretKeyRef: # Chỉ định Secret nguồn
+              name: microbooks-secrets # Tên Secret chứa dữ liệu
+              key: MONGO_URI # Tên key lấy giá trị
+        - name: KAFKA_BROKER # Biến địa chỉ kết nối Kafka
+          valueFrom: # Lấy từ ConfigMap (thông tin cấu hình chung)
+            configMapKeyRef: # Chỉ định ConfigMap nguồn
+              name: microbooks-config # Tên ConfigMap
+              key: KAFKA_BROKER # Tên key lấy giá trị
+        - name: SERVICE_PORT # Cấu hình cổng chạy dịch vụ
+          value: "3002" # Giá trị cố định 3002
+        - name: OTEL_ENABLED # Bật/tắt OpenTelemetry
+          value: "true" # Kích hoạt
+        - name: OTEL_SERVICE_NAME # Tên dịch vụ cho giám sát
+          value: "inventory-service" # Định danh là inventory-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT # Địa chỉ gửi dữ liệu giám sát
+          valueFrom: # Lấy từ ConfigMap
+            configMapKeyRef: # Nguồn từ ConfigMap chung
+              name: microbooks-config # Tên ConfigMap
+              key: OTEL_EXPORTER_OTLP_ENDPOINT # Key chứa URL Collector
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: inventory-service
-  namespace: microbooks
-spec:
-  selector:
-    app: inventory-service
-  ports:
-  - protocol: TCP
-    port: 3002
-    targetPort: 3002
-  type: LoadBalancer
+apiVersion: v1 # Phiên bản API dịch vụ
+kind: Service # Tài nguyên Service để phơi ứng dụng ra mạng
+metadata: # Thông tin mô tả
+  name: inventory-service # Tên Service cho việc phát hiện dịch vụ nội bộ
+  namespace: microbooks # Đặt trong cùng namespace
+spec: # Cấu hình Service
+  selector: # Điều hướng traffic tới các Pod phù hợp
+    app: inventory-service # Tìm Pod có nhãn app=inventory-service
+  ports: # Cấu hình cổng kết nối
+  - protocol: TCP # Giao thức TCP
+    port: 3002 # Cổng mà Service phơi ra ngoài (ClusterIP/LoadBalancer)
+    targetPort: 3002 # Cổng dịch vụ đang chạy trên Pod
+  type: LoadBalancer # Cấp phát IP truy cập từ bên ngoài

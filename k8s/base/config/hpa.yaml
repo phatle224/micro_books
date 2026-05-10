@@ -1,55 +1,55 @@
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: frontend-hpa
+apiVersion: autoscaling/v2 # Phiên bản API hỗ trợ tính năng tự động giãn nở Pod (HPA)
+kind: HorizontalPodAutoscaler # Loại tài nguyên HPA (tự động tăng/giảm số lượng Pod theo tải)
+metadata: 
+  name: frontend-hpa # Tên bộ tự động giãn nở cho Frontend
   namespace: microbooks
-spec:
-  scaleTargetRef:
+spec: 
+  scaleTargetRef: # Đối tượng mục tiêu cần theo dõi để giãn nở
     apiVersion: apps/v1
     kind: Deployment
-    name: frontend
-  minReplicas: 1
-  maxReplicas: 5
-  metrics:
+    name: frontend # Theo dõi Deployment mang tên 'frontend'
+  minReplicas: 1 # Số lượng Pod tối thiểu luôn duy trì
+  maxReplicas: 5 # Số lượng Pod tối đa có thể tăng lên khi tải cao
+  metrics: # Các chỉ số căn cứ để quyết định giãn nở
   - type: Resource
     resource:
-      name: cpu
+      name: cpu # Dựa trên mức độ sử dụng CPU
       target:
-        type: Utilization
-        averageUtilization: 70
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
+        type: Utilization # Tính theo phần trăm sử dụng
+        averageUtilization: 70 # Mục tiêu duy trì mức sử dụng CPU trung bình là 70%
+  behavior: # Cấu hình hành vi khi tăng/giảm số lượng Pod
+    scaleUp: # Hành vi khi tăng số lượng Pod
+      stabilizationWindowSeconds: 0 # Thời gian chờ ổn định (0s nghĩa là tăng ngay lập tức khi cần)
       policies:
       - type: Pods
-        value: 4
-        periodSeconds: 15
-    scaleDown:
-      stabilizationWindowSeconds: 30
+        value: 4 # Tăng tối đa 4 Pod cùng lúc
+        periodSeconds: 15 # Trong mỗi chu kỳ 15 giây
+    scaleDown: # Hành vi khi giảm số lượng Pod (để tiết kiệm tài nguyên)
+      stabilizationWindowSeconds: 30 # Đợi 30 giây tải thấp ổn định mới bắt đầu giảm
       policies:
       - type: Pods
-        value: 4
+        value: 4 # Giảm tối đa 4 Pod cùng lúc
         periodSeconds: 15
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
-metadata:
-  name: order-service-hpa
+metadata: 
+  name: order-service-hpa # HPA cho dịch vụ Đơn hàng
   namespace: microbooks
-spec:
+spec: 
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: order-service
   minReplicas: 1
-  maxReplicas: 3
+  maxReplicas: 3 # Tối đa 3 Pod cho backend
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 80
+        averageUtilization: 80 # Mục tiêu 80% CPU
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 0
@@ -66,10 +66,10 @@ spec:
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
-metadata:
-  name: inventory-service-hpa
+metadata: 
+  name: inventory-service-hpa # HPA cho dịch vụ Kho hàng
   namespace: microbooks
-spec:
+spec: 
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment

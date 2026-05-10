@@ -1,48 +1,48 @@
-server:
-  http_listen_port: 3200
+server: # Cấu hình server của Tempo
+  http_listen_port: 3200 # Cổng lắng nghe Dashboard/API
 
-distributor:
-  receivers:
-    otlp:
+distributor: # Bộ phân phối dữ liệu đầu vào
+  receivers: # Các giao thức nhận dữ liệu Trace
+    otlp: # Nhận theo chuẩn OpenTelemetry
       protocols:
-        grpc:
-        http:
+        grpc: # Qua gRPC
+        http: # Qua HTTP
 
-ingester:
+ingester: # Bộ tiếp nhận và lưu trữ tạm thời các Trace đang hoạt động
   lifecycler:
     ring:
       kvstore:
-        store: inmemory
-      replication_factor: 1
-  trace_idle_period: 10s
-  max_block_bytes: 1000000
-  max_block_duration: 5m
+        store: inmemory # Lưu thông tin điều phối trong bộ nhớ
+      replication_factor: 1 # Không sao chép dữ liệu (dùng cho dev/test)
+  trace_idle_period: 10s # Một trace không có dữ liệu mới sau 10s sẽ được coi là hoàn tất
+  max_block_bytes: 1000000 # Kích thước tối đa của một khối dữ liệu (1MB)
+  max_block_duration: 5m # Thời gian tối đa giữ một khối dữ liệu trước khi lưu xuống ổ cứng
 
-compactor:
+compactor: # Bộ nén và dọn dẹp Trace cũ
   compaction:
-    block_retention: 24h
+    block_retention: 24h # Giữ lại dữ liệu trace trong vòng 24 giờ
 
-metrics_generator:
+metrics_generator: # Bộ tạo Metrics từ dữ liệu Trace (Ví dụ: vẽ sơ đồ dịch vụ)
   registry:
     external_labels:
-      source: tempo
+      source: tempo # Gán nhãn nguồn là tempo cho các metrics tạo ra
   storage:
-    path: /var/tempo/generator/wal
-    remote_write:
-      - url: http://prometheus:9090/api/v1/write
-        send_exemplars: true
+    path: /var/tempo/generator/wal # Thư mục lưu log ghi trước (WAL) của bộ tạo metrics
+    remote_write: # Đẩy các metrics vừa tạo sang Prometheus
+      - url: http://prometheus:9090/api/v1/write # Địa chỉ API nhận dữ liệu của Prometheus
+        send_exemplars: true # Gửi kèm ví dụ (exemplars) để liên kết từ Metric ngược lại Trace
 
-storage:
+storage: # Cấu hình lưu trữ dữ liệu Trace
   trace:
-    backend: local
+    backend: local # Lưu trữ cục bộ trên ổ cứng
     local:
-      path: /var/tempo/traces
+      path: /var/lib/tempo/traces # Thư mục chứa các tệp trace đã nén
     wal:
-      path: /var/tempo/wal
+      path: /var/lib/tempo/wal # Thư mục lưu log ghi trước (Write Ahead Log) để tránh mất dữ liệu khi crash
 
-overrides:
+overrides: # Các thiết lập ghi đè mặc định
   defaults:
     ingestion:
-      max_traces_per_user: 10000
+      max_traces_per_user: 10000 # Giới hạn tối đa 10,000 trace cho mỗi người dùng
     metrics_generator:
-      processors: [service-graphs, span-metrics]
+      processors: [service-graphs, span-metrics] # Kích hoạt bộ xử lý sơ đồ dịch vụ (service graphs) và thông số span

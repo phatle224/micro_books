@@ -1,40 +1,40 @@
-apiVersion: 1
+apiVersion: 1 # Phiên bản cấu hình nguồn dữ liệu của Grafana
 
-datasources:
-  - name: Prometheus
-    type: prometheus
-    uid: prometheus
-    access: proxy
-    url: http://prometheus:9090
-    isDefault: true
+datasources: # Danh sách các nguồn dữ liệu kết nối tới Grafana
+  - name: Prometheus # Tên nguồn dữ liệu Metrics
+    type: prometheus # Loại nguồn là Prometheus
+    uid: prometheus # Mã định danh duy nhất (dùng để tham chiếu chéo giữa các datasource)
+    access: proxy # Truy cập thông qua server Grafana (Proxy)
+    url: http://prometheus:9090 # Địa chỉ Service của Prometheus trong Cluster
+    isDefault: true # Đặt làm nguồn dữ liệu mặc định khi tạo biểu đồ mới
 
-  - name: Loki
-    type: loki
+  - name: Loki # Tên nguồn dữ liệu Logs
+    type: loki # Loại nguồn là Loki
     uid: loki
     access: proxy
-    url: http://loki:3100
+    url: http://loki:3100 # Địa chỉ Service của Loki trong Cluster
 
-  - name: Tempo
-    type: tempo
+  - name: Tempo # Tên nguồn dữ liệu Traces (Theo dõi vết request)
+    type: tempo # Loại nguồn là Tempo
     uid: tempo
     access: proxy
-    url: http://tempo:3200
-    jsonData:
-      httpMethod: GET
+    url: http://tempo:3200 # Địa chỉ Service của Tempo trong Cluster
+    jsonData: # Cấu hình chi tiết cho Tempo
+      httpMethod: GET # Phương thức gọi API
       search:
-        hide: false
+        hide: false # Hiện thanh tìm kiếm trace
       traceQuery:
-        timeShiftEnabled: true
-        spanStartTimeShift: "-1h"
-        spanEndTimeShift: "1h"
+        timeShiftEnabled: true # Cho phép dịch chuyển thời gian khi truy vấn
+        spanStartTimeShift: "-1h" # Mở rộng khoảng thời gian bắt đầu lùi lại 1 giờ
+        spanEndTimeShift: "1h" # Mở rộng khoảng thời gian kết thúc thêm 1 giờ
       nodeGraph:
-        enabled: true
+        enabled: true # Bật biểu đồ tương tác giữa các dịch vụ (Node Graph)
       serviceMap:
-        datasourceUid: prometheus
-      tracesToLogsV2:
-        datasourceUid: loki
-        filterByTraceID: true
-        filterBySpanID: true
+        datasourceUid: prometheus # Sử dụng dữ liệu từ Prometheus để vẽ sơ đồ dịch vụ (Service Map)
+      tracesToLogsV2: # Cấu hình liên kết từ Trace sang Log
+        datasourceUid: loki # Khi xem trace, có thể bấm để xem Log tương ứng trong Loki
+        filterByTraceID: true # Lọc log theo Trace ID
+        filterBySpanID: true # Lọc log theo Span ID
         customQuery: false
       lokiSearch:
-        datasourceUid: loki
+        datasourceUid: loki # Sử dụng Loki để tìm kiếm trace

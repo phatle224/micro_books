@@ -1,34 +1,34 @@
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: microbooks-quota
+apiVersion: v1 # Phiên bản API tài nguyên cơ bản
+kind: ResourceQuota # Loại tài nguyên dùng để giới hạn tổng tài nguyên của một Namespace
+metadata: 
+  name: microbooks-quota # Tên của hạn ngạch tài nguyên
   namespace: microbooks
-spec:
-  hard:
-    requests.cpu: "4"
-    requests.memory: "4Gi"
-    limits.cpu: "8"
-    limits.memory: "8Gi"
-    pods: "50"
+spec: 
+  hard: # Các giới hạn cứng không được phép vượt qua
+    requests.cpu: "4" # Tổng yêu cầu CPU tối thiểu là 4 cores
+    requests.memory: "4Gi" # Tổng yêu cầu RAM tối thiểu là 4GB
+    limits.cpu: "8" # Tổng giới hạn CPU tối đa là 8 cores
+    limits.memory: "8Gi" # Tổng giới hạn RAM tối đa là 8GB
+    pods: "50" # Số lượng Pod tối đa được phép chạy trong Namespace này là 50
+---
+apiVersion: policy/v1 # Phiên bản API chính sách
+kind: PodDisruptionBudget # Đảm bảo tính sẵn sàng của ứng dụng khi Cluster bảo trì/cập nhật
+metadata: 
+  name: frontend-pdb # Chính sách cho Frontend
+  namespace: microbooks
+spec: 
+  minAvailable: 1 # Luôn phải có ít nhất 1 Pod Frontend hoạt động trong mọi thời điểm
+  selector: 
+    matchLabels: 
+      app: frontend # Áp dụng cho các Pod có nhãn app=frontend
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
-metadata:
-  name: frontend-pdb
+metadata: 
+  name: order-service-pdb # Chính sách cho dịch vụ Đơn hàng
   namespace: microbooks
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app: frontend
----
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: order-service-pdb
-  namespace: microbooks
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
+spec: 
+  minAvailable: 1 # Đảm bảo luôn có ít nhất 1 Pod xử lý đơn hàng
+  selector: 
+    matchLabels: 
       app: order-service

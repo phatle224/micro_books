@@ -1,4 +1,4 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: microbooks
+apiVersion: v1 # Phiên bản API của Kubernetes (v1 là bản ổn định cho các resource cơ bản)
+kind: Namespace # Loại tài nguyên là Namespace (dùng để phân chia không gian làm việc trong Cluster)
+metadata: # Thông tin mô tả về tài nguyên
+  name: microbooks # Tên của Namespace, ở đây là 'microbooks'

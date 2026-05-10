@@ -1,38 +1,37 @@
-auth_enabled: false
+auth_enabled: false # Tắt tính năng xác thực người dùng (dùng cho môi trường nội bộ)
 
 server:
-  http_listen_port: 3100
+  http_listen_port: 3100 # Cổng lắng nghe của Loki server
 
 common:
-  path_prefix: /loki
-  storage:
-    filesystem:
-      chunks_directory: /loki/chunks
-      rules_directory: /loki/rules
-  replication_factor: 1
-  ring:
+  path_prefix: /loki # Tiền tố đường dẫn cho các tệp dữ liệu
+  storage: # Cấu hình lưu trữ
+    filesystem: # Lưu trực tiếp vào ổ cứng (không dùng Cloud Storage)
+      chunks_directory: /loki/chunks # Thư mục chứa các khối dữ liệu log (chunks)
+      rules_directory: /loki/rules # Thư mục chứa các quy tắc cảnh báo
+  replication_factor: 1 # Số bản sao dữ liệu (để 1 cho hệ thống nhỏ/dev)
+  ring: # Cấu hình vòng băm (Hash Ring) để điều phối dữ liệu
     instance_addr: 127.0.0.1
     kvstore:
-      store: inmemory
+      store: inmemory # Lưu trữ thông tin ring trong bộ nhớ tạm
 
-
-schema_config:
+schema_config: # Cấu hình lược đồ lưu trữ dữ liệu
   configs:
-    - from: 2020-10-15
-      store: tsdb
-      object_store: filesystem
-      schema: v13
+    - from: 2020-10-15 # Ngày bắt đầu áp dụng cấu hình này
+      store: tsdb # Sử dụng định dạng TSDB cho chỉ mục (index)
+      object_store: filesystem # Lưu trữ đối tượng vào hệ thống tệp
+      schema: v13 # Phiên bản lược đồ mới nhất
       index:
-        prefix: index_
-        period: 24h
+        prefix: index_ # Tiền tố tên file chỉ mục
+        period: 24h # Mỗi tệp chỉ mục chứa dữ liệu của 24 giờ
 
-limits_config:
-  retention_period: 168h
+limits_config: # Giới hạn vận hành
+  retention_period: 168h # Thời gian lưu giữ log tối đa là 168 giờ (7 ngày)
 
-compactor:
-  working_directory: /loki/compactor
-  retention_enabled: true
-  delete_request_store: filesystem
+compactor: # Bộ nén và dọn dẹp dữ liệu
+  working_directory: /loki/compactor # Thư mục làm việc của compactor
+  retention_enabled: true # Bật tính năng tự động xóa log cũ theo retention_period
+  delete_request_store: filesystem # Lưu trữ các yêu cầu xóa vào ổ cứng
 
-ruler:
-  alertmanager_url: http://localhost:9093
+ruler: # Bộ quản lý quy tắc cảnh báo
+  alertmanager_url: http://localhost:9093 # Địa chỉ gửi cảnh báo tới Alertmanager (nếu có)
