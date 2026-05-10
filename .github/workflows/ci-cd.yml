@@ -1,102 +1,136 @@
+# Tên của quy trình CI/CD
 name: Quy trình CI/CD cho Microbooks
 
+# Các sự kiện kích hoạt quy trình
 on:
   push:
+    # Kích hoạt khi có hành động push vào nhánh main
     branches: [ "main" ]
   pull_request:
+    # Kích hoạt khi có pull request gửi tới nhánh main
     branches: [ "main" ]
 
+# Cấu hình quyền hạn cho các tác vụ trong quy trình
 permissions:
+  # Cho phép đọc nội dung kho lưu trữ
   contents: read
+  # Cho phép tạo và chỉnh sửa issue (dùng để báo lỗi)
   issues: write
 
+# Danh sách các công việc thực hiện trong quy trình
 jobs:
+  # Công việc 1: Kiểm thử mã nguồn
   kiem-thu:
+    # Tên hiển thị của công việc
     name: Kiểm thử toàn diện (Lint, Unit, Integration)
+    # Chạy trên hệ điều hành Ubuntu mới nhất
     runs-on: ubuntu-latest
+    # Các bước thực hiện trong công việc này
     steps:
+      # Bước tải mã nguồn từ GitHub vào máy ảo runner
       - name: Tải mã nguồn từ GitHub
         uses: actions/checkout@v4
 
+      # Cài đặt môi trường Python để chạy các script kiểm thử
       - name: Thiết lập môi trường Python
         uses: actions/setup-python@v5
         with:
+          # Sử dụng Python phiên bản 3.11
           python-version: '3.11'
 
+      # Cài đặt các thư viện Python cần thiết từ file requirements.txt
       - name: Cài đặt các thư viện cần thiết
         run: |
+          # Cập nhật công cụ pip lên bản mới nhất
           python -m pip install --upgrade pip
+          # Cài đặt các thư viện kiểm thử cơ bản
           pip install requests pytest flake8
+          # Cài đặt dependency cho Order Service
           pip install -r order_service/requirements.txt
+          # Cài đặt dependency cho Inventory Service
           pip install -r inventory_service/requirements.txt
 
+      # Bước kiểm tra lỗi định dạng và cú pháp code (Linting)
       - name: Bước 1 - Kiểm tra lỗi trình bày code (Linting)
         id: lint
         run: |
           echo "Đang kiểm tra Linting..."
+          # Kiểm tra các lỗi nghiêm trọng (logic, cú pháp)
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics > lint_error.txt 2>&1 || (echo "LINT_FAIL=true" >> $GITHUB_ENV && exit 1)
+          # Kiểm tra các lỗi trình bày (độ dài dòng, độ phức tạp) nhưng không làm dừng quy trình
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics >> lint_summary.txt
 
+      # Chạy Unit Tests để kiểm tra logic riêng lẻ của từng dịch vụ
       - name: Bước 2 - Chạy Unit Tests
         id: unit_test
         run: |
           echo "Đang chạy Unit Tests..."
           UNIT_FAIL_LOCAL=false
+          # Kiểm thử cho dịch vụ Order
           echo "--- Testing Order Service ---"
           cd order_service && python -m pytest tests > ../unit_test_report.txt 2>&1 || UNIT_FAIL_LOCAL=true
           cd ..
+          # Kiểm thử cho dịch vụ Inventory
           echo "--- Testing Inventory Service ---"
           cd inventory_service && python -m pytest tests >> ../unit_test_report.txt 2>&1 || UNIT_FAIL_LOCAL=true
           cd ..
           
+          # In kết quả kiểm thử ra màn hình log của GitHub Actions
           if [ -f unit_test_report.txt ]; then cat unit_test_report.txt; fi
           
+          # Nếu có test nào thất bại thì đánh dấu và dừng quy trình
           if [ "$UNIT_FAIL_LOCAL" = "true" ]; then
             echo "UNIT_FAIL=true" >> $GITHUB_ENV
             exit 1
           fi
 
+      # Thiết lập môi trường giả lập (Kafka, MongoDB) để phục vụ kiểm thử tích hợp
       - name: Bước 3 - Chuẩn bị hạ tầng cho Integration Test (Kafka, MongoDB)
         run: |
-          # Tạo file .env ảo cho docker
+          # Tạo file .env giả để container nhận diện tham số kết nối
           echo "MONGO_URI=mongodb://mongodb:27017" > .env
           echo "KAFKA_BROKER=kafka:9092" >> .env
           
-          # Khởi chạy MongoDB
+          # Chạy database MongoDB bằng Docker
           docker run -d --name mongodb -p 27017:27017 mongo:latest
           
-          # Khởi chạy Zookeeper và Kafka
+          # Sử dụng Docker Compose để khởi chạy hạ tầng tin nhắn Kafka
           docker compose up -d zookeeper kafka
           
-          # Đợi Kafka khởi động xong
+          # Chờ đợi Kafka khởi động hoàn tất trước khi chạy dịch vụ
           echo "Đang đợi Kafka khởi động (20s)..."
           sleep 20
 
+      # Khởi động chính các microservices để kiểm tra khả năng giao tiếp giữa chúng
       - name: Bước 4 - Chạy các Microservices để kiểm thử
         env:
+          # Cung cấp biến môi trường cho ứng dụng kết nối tới hạ tầng vừa tạo
           MONGO_URI: mongodb://localhost:27017
           KAFKA_BROKER: localhost:9092
         run: |
-          # Chạy Order Service trong background
+          # Chạy Order Service ở chế độ nền (background)
           cd order_service
           nohup uvicorn app.main:app --host 0.0.0.0 --port 3001 > order_service.log 2>&1 &
           cd ..
           
-          # Chạy Inventory Service trong background
+          # Chạy Inventory Service ở chế độ nền (background)
           cd inventory_service
           nohup uvicorn app.main:app --host 0.0.0.0 --port 3002 > inventory_service.log 2>&1 &
           cd ..
           
-          # Đợi các dịch vụ sẵn sàng
+          # Đợi các dịch vụ khởi tạo và lắng nghe cổng kết nối
           echo "Đang đợi các dịch vụ khởi động (15s)..."
           sleep 15
 
+      # Thực hiện kịch bản kiểm thử luồng nghiệp vụ thực tế qua API
       - name: Bước 5 - Chạy Test tích hợp (Integration Test)
         id: integration_test
         run: |
           echo "Đang chạy Integration Tests..."
+          # Chạy script Python thực hiện gọi API kiểm tra luồng đặt hàng
           python tests/test_order_flow.py > integration_report.txt 2>&1 || (echo "INTEGRATION_FAIL=true" >> $GITHUB_ENV && exit 1)
 
+      # Hiển thị log của các dịch vụ nếu quy trình gặp lỗi để dễ debug
       - name: Hiển thị nhật ký (log) trực tiếp khi có lỗi xảy ra
         if: failure()
         run: |
@@ -107,6 +141,7 @@ jobs:
           echo "--- NHẬT KÝ (LOG) CỦA INVENTORY SERVICE ---"
           [ -f inventory_service/inventory_service.log ] && cat inventory_service/inventory_service.log || echo "Không tìm thấy tệp nhật ký"
 
+      # Tải các tệp log lên thành Artifact để tải về xem sau
       - name: Lưu lại Log nếu có lỗi xảy ra
         if: failure()
         uses: actions/upload-artifact@v4
@@ -116,10 +151,12 @@ jobs:
             order_service/order_service.log
             inventory_service/inventory_service.log
 
+      # Tự động tạo Issue trên GitHub khi CI/CD thất bại
       - name: Tạo Issue báo lỗi
         if: failure()
         uses: actions/github-script@v7
         env:
+          # Thu thập thông tin commit/PR gây lỗi
           COMMIT_MSG: ${{ github.event.head_commit.message || github.event.pull_request.title || 'No commit message' }}
           REF_NAME: ${{ github.ref_name }}
         with:
@@ -129,19 +166,23 @@ jobs:
             const refName = process.env.REF_NAME;
             let errorDetails = '';
             
+            // Xử lý thông tin lỗi Linting
             if (process.env.LINT_FAIL === 'true') {
               const log = fs.existsSync('lint_error.txt') ? fs.readFileSync('lint_error.txt', 'utf8') : 'Không có log';
               errorDetails += `### 🧹 Lỗi Kiểm tra Định dạng (Linting)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
             }
+            // Xử lý thông tin lỗi Unit Test
             if (process.env.UNIT_FAIL === 'true') {
               const log = fs.existsSync('unit_test_report.txt') ? fs.readFileSync('unit_test_report.txt', 'utf8').slice(-2000) : 'Không có log';
               errorDetails += `### 🧪 Lỗi Kiểm thử Đơn vị (Unit Tests)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
             }
+            // Xử lý thông tin lỗi Integration Test
             if (process.env.INTEGRATION_FAIL === 'true') {
               const log = fs.existsSync('integration_report.txt') ? fs.readFileSync('integration_report.txt', 'utf8').slice(-2000) : 'Không có log';
               errorDetails += `### 🔗 Lỗi Kiểm thử Tích hợp (Integration Tests)\n<details><summary>Nhấn để xem chi tiết lỗi</summary>\n\n\`\`\`\n${log}\n\`\`\`\n</details>\n\n`;
             }
 
+            // Gửi yêu cầu tạo issue mới với nội dung báo cáo lỗi chi tiết
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -167,6 +208,7 @@ jobs:
             3. Sửa lỗi dựa trên thông báo phía trên và push lại code.`.replace(/^ +/gm, '')
             })
 
+      # Hiển thị tóm tắt kết quả kiểm thử ngay trong tab Summary của GitHub Actions
       - name: Báo cáo tóm tắt kết quả
         if: always()
         run: |
@@ -179,21 +221,21 @@ jobs:
           echo "| STT | Nội dung kiểm tra | Trạng thái | Ghi chú |" >> $GITHUB_STEP_SUMMARY
           echo "| :-- | :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
           
-          # Lint
+          # Tóm tắt kết quả Lint
           if [[ "${{ env.LINT_FAIL }}" == "true" ]]; then
             echo "| 1 | **Kiểm tra Linting** | ❌ | Phát hiện lỗi định dạng code |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| 1 | **Kiểm tra Linting** | ✅ | Code đạt chuẩn PEP8 |" >> $GITHUB_STEP_SUMMARY
           fi
           
-          # Unit Test
+          # Tóm tắt kết quả Unit Test
           if [[ "${{ env.UNIT_FAIL }}" == "true" ]]; then
             echo "| 2 | **Unit Tests** | ❌ | Có test case bị hỏng |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| 2 | **Unit Tests** | ✅ | Tất cả logic unit ổn định |" >> $GITHUB_STEP_SUMMARY
           fi
           
-          # Integration Test
+          # Tóm tắt kết quả Integration Test
           if [[ "${{ env.INTEGRATION_FAIL }}" == "true" ]]; then
             echo "| 3 | **Integration Tests** | ❌ | Lỗi kết nối giữa các Service |" >> $GITHUB_STEP_SUMMARY
           else
@@ -207,33 +249,44 @@ jobs:
           echo "- **Tin nhắn commit:** \`${{ github.event.head_commit.message }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Thời gian:** $(date +'%H:%M:%S %d/%m/%Y')" >> $GITHUB_STEP_SUMMARY
 
+  # Công việc 2: Đóng gói Docker Image và đẩy lên kho chứa (Docker Hub)
   dong-goi-va-day-len-docker-hub:
     name: Đóng gói và Đẩy Docker Images lên Docker Hub
+    # Chỉ chạy nếu công việc 'kiem-thu' thành công
     needs: kiem-thu
     runs-on: ubuntu-latest
+    # Chỉ chạy khi push lên nhánh main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+      # Tải mã nguồn
       - name: Tải mã nguồn từ GitHub
         uses: actions/checkout@v4
 
+      # Cài đặt Buildx để hỗ trợ build Docker image nâng cao
       - name: Thiết lập Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Xác thực với Docker Hub bằng Secret đã cài đặt trong Repo
       - name: Đăng nhập vào Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      # Build và Push Docker Image cho Order Service
       - name: Build và Push - Order Service
         id: build_order
         run: |
+          # Lấy 7 ký tự đầu của mã SHA commit để làm tag phiên bản
           TAG=$(echo ${{ github.sha }} | cut -c1-7)
           REPO=${{ secrets.DOCKER_HUB_USERNAME }}/microbooks-order-service
+          # Build image với 2 tag: latest và tag theo commit
           docker build ./order_service -t $REPO:latest -t $REPO:$TAG > order_build.log 2>&1
+          # Đẩy image lên Docker Hub
           docker push $REPO:latest >> order_build.log 2>&1
           docker push $REPO:$TAG >> order_build.log 2>&1 || (echo "ORDER_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
+      # Build và Push Docker Image cho Inventory Service
       - name: Build và Push - Inventory Service
         id: build_inventory
         run: |
@@ -243,6 +296,7 @@ jobs:
           docker push $REPO:latest >> inventory_build.log 2>&1
           docker push $REPO:$TAG >> inventory_build.log 2>&1 || (echo "INVENTORY_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
+      # Build và Push Docker Image cho Frontend
       - name: Build và Push - Frontend
         id: build_frontend
         run: |
@@ -252,6 +306,7 @@ jobs:
           docker push $REPO:latest >> frontend_build.log 2>&1
           docker push $REPO:$TAG >> frontend_build.log 2>&1 || (echo "FRONTEND_BUILD_FAIL=true" >> $GITHUB_ENV && exit 1)
 
+      # Tạo Issue báo lỗi nếu bước build Docker thất bại
       - name: Tạo Issue báo lỗi
         if: failure()
         uses: actions/github-script@v7
@@ -292,6 +347,7 @@ jobs:
             3. Xem chi tiết lỗi build tại: [GitHub Actions Run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`.replace(/^ +/gm, '')
             })
 
+      # Hiển thị tóm tắt trạng thái Docker Images trong tab Summary
       - name: Báo cáo tóm tắt kết quả
         if: always()
         run: |
