@@ -341,7 +341,7 @@ We provide an intuitive interface for users and developers to track event-driven
 </p>
 
 <p align="center">
-  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful..</i>
+  <i>Thank you for stopping by! Don’t forget to give this repo a <b>⭐️ Star</b> if you find it useful.</i>
 </p>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=80&section=footer"/>
