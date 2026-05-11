@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 
-export default function UserLogin() {
+function LoginContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const searchParams = useSearchParams();
@@ -108,5 +108,13 @@ export default function UserLogin() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UserLogin() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

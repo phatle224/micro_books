@@ -16,31 +16,30 @@ spec:
       containers:
       - name: frontend
         image: kietne1211/microbooks-frontend:latest
-        command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--webpack"]
         ports:
         - containerPort: 3000
         livenessProbe:
           httpGet:
             path: /
             port: 3000
-          initialDelaySeconds: 180
+          initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 20
-          failureThreshold: 12
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /
             port: 3000
-          initialDelaySeconds: 30
+          initialDelaySeconds: 10
           periodSeconds: 5
-          timeoutSeconds: 20
-          failureThreshold: 6
+          timeoutSeconds: 5
+          failureThreshold: 3
         resources:
           limits:
             cpu: "500m"
-            memory: "1536Mi"
+            memory: "1Gi"
           requests:
-            cpu: "100m"
+            cpu: "200m"
             memory: "512Mi"
         env:
         - name: ORDER_SERVICE_URL
