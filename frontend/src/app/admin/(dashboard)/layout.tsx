@@ -54,7 +54,7 @@ export default function AdminLayout({
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2">
             <Star className="w-6 h-6 fill-black text-black" />
-            <span className="text-xl font-semibold tracking-tight">MicroBooks Admin123</span>
+            <span className="text-xl font-semibold tracking-tight">MicroBooks Admin</span>
           </Link>
         </div>
 
