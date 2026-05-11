@@ -10,6 +10,9 @@ permissions:
   contents: read
   issues: write
 
+env:
+  TZ: Asia/Ho_Chi_Minh
+
 jobs:
   kiem-thu:
     name: Kiểm thử toàn diện (Lint, Unit, Integration)

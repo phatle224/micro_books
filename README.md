@@ -1,15 +1,18 @@
 <div align="center">
 
-  <!-- Header with new title -->
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=150&section=header&text=Microbooks%20v2.0&fontSize=40&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
+<!-- Header with new title -->
 
-  <!-- Link and Typing SVG effect -->
-  <a href="https://github.com/phatle224/micro_books">
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=150&section=header&text=Microbooks%20v2.0&fontSize=40&fontAlignY=35&animation=twinkling&fontColor=ffffff" width="100%" alt="Header"/>
+
+<!-- Link and Typing SVG effect -->
+
+<a href="https://github.com/phatle224/micro_books">
     <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2496ED&center=true&vCenter=true&width=600&lines=🐳+Self-hosted+CI/CD+Pipeline;📚+Microbooks+v2.0+Architecture;🛠️+Docker+Compose+%7C+FastAPI+%7C+Kafka" alt="Typing SVG" />
-  </a> 
+  </a>
 
-  <!-- Badges -->
-  <p align="center">
+<!-- Badges -->
+
+<p align="center">
     <a href="https://github.com/phatle224/micro_books/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/phatle224/micro_books?style=flat-square&color=blue" alt="License" />
     </a>
@@ -102,16 +105,16 @@ graph TD
 
 ## 🛠️ Tech Stack & DevOps
 
-| Component | Technology |
-|-----------|------------|
-| **Frontend** | Next.js 15 (App Router), Tailwind CSS |
-| **Backend** | Python 3.10+, FastAPI |
-| **Database** | MongoDB Atlas (Cloud) |
-| **Message Broker** | Apache Kafka & Zookeeper |
-| **Monitoring** | Kafka UI (provectuslabs) |
-| **Infrastructure** | Docker & Docker Compose |
-| **CI/CD** | GitHub Actions (Self-hosted Runner) |
-| **Observability** | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
+| Component                | Technology                                          |
+| ------------------------ | --------------------------------------------------- |
+| **Frontend**       | Next.js 15 (App Router), Tailwind CSS               |
+| **Backend**        | Python 3.10+, FastAPI                               |
+| **Database**       | MongoDB Atlas (Cloud)                               |
+| **Message Broker** | Apache Kafka & Zookeeper                            |
+| **Monitoring**     | Kafka UI (provectuslabs)                            |
+| **Infrastructure** | Docker & Docker Compose                             |
+| **CI/CD**          | GitHub Actions (Self-hosted Runner)                 |
+| **Observability**  | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
 
 ## 📁 Project Directory Structure
 
@@ -133,6 +136,7 @@ MicroBooks/
 ## 🚀 CI/CD Workflow (Self-hosted Runner)
 
 The system is integrated with a complete **Automation** workflow:
+
 1. **Continuous Integration (CI):** Automatically validates code and runs unit tests upon Pull Request or push to the `main` branch.
 2. **Continuous Deployment (CD):** Uses a **GitHub Actions Self-hosted Runner** installed directly on the local server.
    - Upon successful CI, the Runner automatically executes `docker-compose pull` and `docker-compose up -d`.
@@ -177,15 +181,16 @@ kubectl delete -k k8s/base
 
 ### Service Access
 
-| Service | URL | Description |
-|---------|-----|-------|
-| **Storefront** | [http://localhost:3000](http://localhost:3000) | Shopping Interface |
-| **Admin Portal** | [http://localhost:3000/admin](http://localhost:3000/admin) | System Administration |
-| **Kafka UI** | [http://localhost:8080](http://localhost:8080) | Message Queue Monitoring |
-| **Order API Docs** | [http://localhost:3001/docs](http://localhost:3001/docs) | Swagger UI (Order Service) |
-| **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs) | Swagger UI (Inventory Service) |
+| Service                      | URL                                                     | Description                    |
+| ---------------------------- | ------------------------------------------------------- | ------------------------------ |
+| **Storefront**         | [http://localhost:3000](http://localhost:3000)             | Shopping Interface             |
+| **Admin Portal**       | [http://localhost:3000/admin](http://localhost:3000/admin) | System Administration          |
+| **Kafka UI**           | [http://localhost:8080](http://localhost:8080)             | Message Queue Monitoring       |
+| **Order API Docs**     | [http://localhost:3001/docs](http://localhost:3001/docs)   | Swagger UI (Order Service)     |
+| **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs)   | Swagger UI (Inventory Service) |
 
 ## 📊 Kafka Monitoring (User Access)
+
 ```bash
 # Terminal 1: Order Service
 cd order-service
@@ -205,12 +210,12 @@ npm run dev
 
 ### Access URLs
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| Order Service API | http://localhost:3001/api/orders (Docs: /docs) |
-| Inventory Service API | http://localhost:3002/api/books (Docs: /docs) |
-| Kafka UI | http://localhost:8080 |
+| Service               | URL                                            |
+| --------------------- | ---------------------------------------------- |
+| Frontend              | http://localhost:3000                          |
+| Order Service API     | http://localhost:3001/api/orders (Docs: /docs) |
+| Inventory Service API | http://localhost:3002/api/books (Docs: /docs)  |
+| Kafka UI              | http://localhost:8080                          |
 
 ## 📈 Monitoring & Observability
 
@@ -218,12 +223,12 @@ The observability stack is pre-configured using OpenTelemetry + Prometheus + Gra
 
 ### Access URLs
 
-| Service | URL |
-|---------|-----|
-| Grafana | http://localhost:3005 (admin / admin) |
-| Prometheus | http://localhost:9090 |
-| Loki | http://localhost:3100 |
-| Tempo | http://localhost:3200 |
+| Service    | URL                                   |
+| ---------- | ------------------------------------- |
+| Grafana    | http://localhost:3005 (admin / admin) |
+| Prometheus | http://localhost:9090                 |
+| Loki       | http://localhost:3100                 |
+| Tempo      | http://localhost:3200                 |
 
 ### Quick Notes
 
@@ -240,36 +245,36 @@ You can access the admin portal to manage the bookstore, orders, and monitor Kaf
 - **Username:** `admin@microbooks.com`
 - **Password:** `admin123`
 
-| Page | Description |
-|-------|-------|
-| `/admin` | General Dashboard |
-| `/admin/books` | Book Inventory Management |
-| `/admin/orders` | Order Management |
-| `/admin/kafka` | Kafka Monitor (embedded Kafka UI) |
+| Page              | Description                       |
+| ----------------- | --------------------------------- |
+| `/admin`        | General Dashboard                 |
+| `/admin/books`  | Book Inventory Management         |
+| `/admin/orders` | Order Management                  |
+| `/admin/kafka`  | Kafka Monitor (embedded Kafka UI) |
 
 ## 📡 API Endpoints
 
 ### Order Service (Port 3001)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/orders` | Get all orders |
-| GET | `/api/orders/{id}` | Get order details |
-| POST | `/api/orders` | Create new order |
-| PATCH | `/api/orders/{id}` | Update status |
-| GET | `/api/orders/stats/summary` | Order statistics (Admin) |
+| Method | Endpoint                      | Description              |
+| ------ | ----------------------------- | ------------------------ |
+| GET    | `/api/orders`               | Get all orders           |
+| GET    | `/api/orders/{id}`          | Get order details        |
+| POST   | `/api/orders`               | Create new order         |
+| PATCH  | `/api/orders/{id}`          | Update status            |
+| GET    | `/api/orders/stats/summary` | Order statistics (Admin) |
 
 ### Inventory Service (Port 3002)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/books` | Get all books |
-| GET | `/api/books/{id}` | Get book details |
-| POST | `/api/books` | Add new book |
-| PUT | `/api/books/{id}` | Update book |
-| DELETE | `/api/books/{id}` | Delete book |
-| GET | `/api/books/categories` | Get book categories |
-| GET | `/api/books/stats/summary` | Inventory statistics (Admin) |
+| Method | Endpoint                     | Description                  |
+| ------ | ---------------------------- | ---------------------------- |
+| GET    | `/api/books`               | Get all books                |
+| GET    | `/api/books/{id}`          | Get book details             |
+| POST   | `/api/books`               | Add new book                 |
+| PUT    | `/api/books/{id}`          | Update book                  |
+| DELETE | `/api/books/{id}`          | Delete book                  |
+| GET    | `/api/books/categories`    | Get book categories          |
+| GET    | `/api/books/stats/summary` | Inventory statistics (Admin) |
 
 ## ⚡ Event-Driven Workflow
 
@@ -291,6 +296,7 @@ The system integrates **[Kafka UI](https://github.com/provectus/kafka-ui)** for 
 > Kafka UI is embedded directly into the Admin page at `/admin/kafka` and can also be opened separately at `http://localhost:8080`.
 
 We provide an intuitive interface for users and developers to track event-driven flows:
+
 - **Kafka UI:** Access at [http://localhost:8080](http://localhost:8080).
 - Here you can view topics like `order_created`, inspect message payloads, and monitor the status of Consumers (Inventory Service).
 
@@ -300,13 +306,13 @@ We provide an intuitive interface for users and developers to track event-driven
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=120&section=header" alt="header" />
 </p>
 
-| | |
-| :---: | :---: |
-| <a href="https://github.com/Kietnehi"><img src="https://github-readme-stats.vercel.app/api?username=Kietnehi&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> | <a href="https://github.com/phatle224"><img src="https://github-readme-stats.vercel.app/api?username=phatle224&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/></a> |
-| <img src="https://github.com/Kietnehi.png" width="80"/> | <img src="https://github.com/phatle224.png" width="80"/> |
-| <b><a href="https://github.com/Kietnehi">Kiet Truong</a></b> | <b><a href="https://github.com/phatle224">Phat Le</a></b> |
-| Fullstack Dev & DevOps | Data Engineer & Backend |
-| <p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> | <p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge&logo=github"/> <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/> <a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/></a></p> |
+|                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                                                                                                `<a href="https://github.com/Kietnehi"><img src="https://github-readme-stats.vercel.app/api?username=Kietnehi&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/>``</a>`                                                                                                                                |                                                                                                                                 `<a href="https://github.com/phatle224"><img src="https://github-readme-stats.vercel.app/api?username=phatle224&show_icons=true&hide_title=true&hide=issues,contribs,prs&rank_icon=github&hide_border=true"/>``</a>`                                                                                                                                 |
+|                                                                                                                                                                                                              `<img src="https://github.com/Kietnehi.png" width="80"/>`                                                                                                                                                                                                              |                                                                                                                                                                                                               `<img src="https://github.com/phatle224.png" width="80"/>`                                                                                                                                                                                                               |
+|                                                                                                                                                                                                         `<b><a href="https://github.com/Kietnehi">`Kiet Truong`</a></b>`                                                                                                                                                                                                         |                                                                                                                                                                                                            `<b><a href="https://github.com/phatle224">`Phat Le`</a></b>`                                                                                                                                                                                                            |
+|                                                                                                                                                                                                                                Fullstack Dev & DevOps                                                                                                                                                                                                                                |                                                                                                                                                                                                                                 Data Engineer & Backend                                                                                                                                                                                                                                 |
+| `<p align="center"><img src="https://img.shields.io/github/followers/Kietnehi?style=for-the-badge&logo=github"/>` `<img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2FKietnehi&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/>` `<a href="https://github.com/Kietnehi"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/>``</a></p>` | `<p align="center"><img src="https://img.shields.io/github/followers/phatle224?style=for-the-badge&logo=github"/>` `<img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github-star-counter.workers.dev%2Fuser%2Fphatle224&query=%24.stars&style=for-the-badge&color=yellow&label=Stars&logo=github"/>` `<a href="https://github.com/phatle224"><img src="https://img.shields.io/badge/Profile-GitHub-181717?style=for-the-badge&logo=github"/>``</a></p>` |
 
 <p align="center">
   <a href="https://github.com/phatle224/micro_books">
@@ -336,6 +342,7 @@ We provide an intuitive interface for users and developers to track event-driven
 </p>
 
 <!-- Dynamic Quote -->
+
 <p align="center">
   <img src="https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark" alt="Daily Quote"/>
 </p>
