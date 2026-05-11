@@ -4,6 +4,7 @@ const orderServiceUrl = process.env.ORDER_SERVICE_URL || "http://localhost:3001"
 const inventoryServiceUrl = process.env.INVENTORY_SERVICE_URL || "http://localhost:3002";
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   webpack: (config, { dev }) => {
     if (dev) {
       config.watchOptions = {
