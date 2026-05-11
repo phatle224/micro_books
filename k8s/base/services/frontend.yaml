@@ -1,58 +1,57 @@
-apiVersion: apps/v1 # Phiên bản API cho các đối tượng ứng dụng (Deployments)
-kind: Deployment # Loại tài nguyên là Deployment (quản lý việc triển khai các Pod)
-metadata: # Thông tin mô tả
-  name: frontend # Tên của Deployment
-  namespace: microbooks # Namespace triển khai
-spec: # Định nghĩa trạng thái mong muốn của Deployment
-  replicas: 1 # Số lượng bản sao (Pod) muốn duy trì chạy đồng thời
-  selector: # Cách thức Deployment tìm các Pod mà nó quản lý
-    matchLabels: # Khớp theo nhãn
-      app: frontend # Tìm các Pod có nhãn app=frontend
-  template: # Mẫu để tạo ra các Pod mới
-    metadata: # Thông tin mô tả cho Pod
-      labels: # Gán nhãn cho Pod
-        app: frontend # Nhãn app=frontend
-    spec: # Đặc tả kỹ thuật bên trong Pod
-      containers: # Danh sách các container chạy trong Pod
-      - name: frontend # Tên container
-        image: kietne1211/microbooks-frontend:latest # Đường dẫn image trên Docker Hub
-        command: ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--webpack"] # Lệnh khởi chạy ứng dụng
-        ports: # Các cổng container mở ra
-        - containerPort: 3000 # Mở cổng 3000 cho traffic vào container
-        livenessProbe: # Kiểm tra xem container còn sống không (nếu chết K8s sẽ khởi động lại)
-          httpGet: # Gửi request HTTP GET
-            path: / # Đường dẫn kiểm tra
-            port: 3000 # Cổng kiểm tra
-          initialDelaySeconds: 180 # Đợi 180 giây trước khi bắt đầu kiểm tra lần đầu (cho app khởi động)
-          periodSeconds: 10 # Tần suất kiểm tra mỗi 10 giây
-          timeoutSeconds: 20 # Thời gian chờ tối đa cho mỗi lần phản hồi
-          failureThreshold: 12 # Số lần thử lại thất bại tối đa trước khi coi là chết
-        readinessProbe: # Kiểm tra xem container đã sẵn sàng nhận traffic chưa
-          httpGet: # Gửi request HTTP GET
-            path: / # Đường dẫn kiểm tra
-            port: 3000 # Cổng kiểm tra
-          initialDelaySeconds: 30 # Đợi 30 giây trước khi kiểm tra lần đầu
-          periodSeconds: 5 # Tần suất kiểm tra mỗi 5 giây
-          timeoutSeconds: 20 # Thời gian chờ tối đa
-          failureThreshold: 6 # Số lần thất bại tối đa
-        resources: # Giới hạn và yêu cầu tài nguyên cho container
-          limits: # Mức trần tối đa container có thể sử dụng
-            cpu: "500m" # Tối đa 0.5 CPU core
-            memory: "1536Mi" # Tối đa 1.5GB RAM
-          requests: # Mức tài nguyên tối thiểu cần thiết để khởi chạy Pod
-            cpu: "100m" # Cần 0.1 CPU core
-            memory: "512Mi" # Cần 512MB RAM
-        env: # Danh sách các biến môi trường
-        - name: ORDER_SERVICE_URL # Tên biến URL gọi sang Order Service
-          valueFrom: # Lấy giá trị từ nguồn khác
-            configMapKeyRef: # Lấy từ ConfigMap
-              name: microbooks-config # Tên ConfigMap nguồn
-              key: ORDER_SERVICE_URL # Tên key trong ConfigMap
-        - name: INVENTORY_SERVICE_URL # Tên biến URL gọi sang Inventory Service
-          valueFrom: # Lấy giá trị từ nguồn khác
-            configMapKeyRef: # Lấy từ ConfigMap
-              name: microbooks-config # Tên ConfigMap nguồn
-              key: INVENTORY_SERVICE_URL # Tên key trong ConfigMap
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: microbooks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: kietne1211/microbooks-frontend:latest
+        ports:
+        - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+        env:
+        - name: ORDER_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: microbooks-config
+              key: ORDER_SERVICE_URL
+        - name: INVENTORY_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: microbooks-config
+              key: INVENTORY_SERVICE_URL
 ---
 apiVersion: v1 # Phiên bản API cơ bản
 kind: Service # Loại tài nguyên là Service (tạo điểm truy cập cố định cho các Pod)

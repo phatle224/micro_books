@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import Turnstile from "@/components/storefront/Turnstile";
 
-export default function UserLogin() {
+function LoginContent() {
   const router = useRouter();
   const { showToast } = useToast();
   const searchParams = useSearchParams();
@@ -56,7 +56,7 @@ export default function UserLogin() {
             <Star className="w-6 h-6 fill-white text-white" />
           </div>
         </div>
-        
+
         <h1 className="text-2xl font-semibold text-center mb-2 tracking-tight">Welcome back</h1>
         <p className="text-gray-500 text-center text-sm mb-8">Enter your credentials to access your account</p>
 
@@ -68,11 +68,11 @@ export default function UserLogin() {
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
-            <input 
-              required 
-              type="email" 
+            <input
+              required
+              type="email"
               value={formData.email}
-              onChange={e => setFormData({...formData, email: e.target.value})}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-all bg-gray-50/50 focus:bg-white"
               placeholder="you@example.com"
             />
@@ -82,22 +82,22 @@ export default function UserLogin() {
               <label className="block text-sm font-medium text-gray-700">Password</label>
               <Link href="#" className="text-xs text-gray-500 hover:text-black font-medium transition-colors">Forgot password?</Link>
             </div>
-            <input 
-              required 
-              type="password" 
+            <input
+              required
+              type="password"
               value={formData.password}
-              onChange={e => setFormData({...formData, password: e.target.value})}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-black focus:border-black outline-none transition-all bg-gray-50/50 focus:bg-white"
               placeholder="••••••••"
             />
           </div>
-          
+
           <div className="flex justify-center py-2">
             <Turnstile onVerify={useCallback((token: string) => setCaptchaToken(token), [])} />
           </div>
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={loading || !captchaToken}
             className="w-full bg-black text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
           >
@@ -114,5 +114,13 @@ export default function UserLogin() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UserLogin() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -1,5 +1,5 @@
-# Sử dụng base image Node.js phiên bản 20 trên nền Alpine Linux (nhẹ và bảo mật)
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
 # Thiết lập thư mục làm việc bên trong container là /app
 WORKDIR /app
@@ -7,15 +7,31 @@ WORKDIR /app
 # Sao chép các file package.json và package-lock.json vào thư mục làm việc
 # Việc copy riêng giúp tận dụng Docker cache cho các node_modules
 COPY package.json package-lock.json ./
-
-# Cài đặt các dependencies của dự án
-RUN npm install
+RUN npm ci
 
 # Sao chép toàn bộ mã nguồn của project vào container
 COPY . .
 
-# Thông báo rằng container sẽ lắng nghe trên cổng 3000
+ARG ORDER_SERVICE_URL=http://order-service:3001
+ARG INVENTORY_SERVICE_URL=http://inventory-service:3002
+ENV ORDER_SERVICE_URL=$ORDER_SERVICE_URL
+ENV INVENTORY_SERVICE_URL=$INVENTORY_SERVICE_URL
+
+RUN npm run build
+
+# Stage 2: Production runtime
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/next.config.ts ./
+
 EXPOSE 3000
 
-# Lệnh để khởi chạy ứng dụng ở chế độ development
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]

@@ -34,6 +34,21 @@ async def publish_order_created(order_data: dict):
         raise
 
 
+async def publish_order_updated(order_id: str, status: str, reason: str = ""):
+    """Publish order_updates event to Kafka topic (Admin/System updates)."""
+    try:
+        p = await get_producer()
+        event = {
+            "order_id": order_id,
+            "status": status,
+            "reason": reason
+        }
+        await p.send_and_wait("order_updates", value=event)
+        logger.info(f"Published order_updates event for order {order_id} with status {status}")
+    except Exception as e:
+        logger.error(f"Failed to publish order_updates event: {e}")
+
+
 async def close_producer():
     global producer
     if producer:

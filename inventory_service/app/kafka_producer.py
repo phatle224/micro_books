@@ -23,7 +23,7 @@ async def publish_stock_failed(order_id, reason):
     try:
         p = await get_producer()
         event = {
-            "order_id": order_id,
+            "order_id": str(order_id),
             "status": "cancelled",
             "reason": reason
         }
@@ -31,6 +31,20 @@ async def publish_stock_failed(order_id, reason):
         logger.info(f"Published stock_failed event for order {order_id}")
     except Exception as e:
         logger.error(f"Failed to publish stock_failed event: {e}")
+
+async def publish_stock_success(order_id):
+    """Publish an event when stock is successfully deducted."""
+    try:
+        p = await get_producer()
+        event = {
+            "order_id": str(order_id),
+            "status": "confirmed",
+            "reason": "Inventory reserved successfully"
+        }
+        await p.send_and_wait("order_updates", event)
+        logger.info(f"Published stock_success event for order {order_id}")
+    except Exception as e:
+        logger.error(f"Failed to publish stock_success event: {e}")
 
 async def close_producer():
     if producer:
