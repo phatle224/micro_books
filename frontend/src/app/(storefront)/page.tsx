@@ -46,7 +46,7 @@ export default function Home() {
       <h1
         className="text-6xl md:text-8xl lg:text-[100px] font-serif font-bold leading-[0.95] tracking-tight mb-8 animate-fade-in-up text-slate-900"
       >
-        Read <span className="italic text-orange-700">Smarter.</span><br />
+        Read Book <span className="italic text-orange-700">Smarter.</span><br />
         Discover <span className="text-gold">More.</span>
       </h1>
 
