@@ -1,11 +1,18 @@
 apiVersion: 1
 
 providers:
+  # Grafana dashboard provider: tự động nạp dashboard từ thư mục được mount trong container.
   - name: microbooks
+    # orgId mặc định của Grafana OSS thường là 1.
     orgId: 1
+    # Dashboard sẽ xuất hiện trong folder "MicroBooks" trên UI Grafana.
     folder: MicroBooks
+    # type=file nghĩa là Grafana đọc dashboard JSON từ filesystem.
     type: file
+    # Không cho Grafana tự xóa dashboard nếu file nguồn vẫn còn tồn tại.
     disableDeletion: true
+    # Cho phép chỉnh dashboard trên UI rồi lưu lại metadata tại Grafana.
     allowUiUpdates: true
     options:
+      # Đường dẫn trong container chứa các file JSON dashboard được provision.
       path: /var/lib/grafana/dashboards

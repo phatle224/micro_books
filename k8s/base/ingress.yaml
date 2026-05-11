@@ -1,9 +1,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  # Ingress định nghĩa cách truy cập HTTP từ bên ngoài vào service trong cluster.
   name: microbooks-ingress
   namespace: microbooks
   annotations:
+    # Với NGINX Ingress Controller, rewrite toàn bộ request path về "/" trước khi chuyển vào backend.
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
@@ -11,9 +13,12 @@ spec:
     http:
       paths:
       - path: /
+        # Prefix nghĩa là mọi request bắt đầu bằng "/" sẽ match rule này.
         pathType: Prefix
         backend:
           service:
+            # Chuyển lưu lượng đến Service frontend trong cùng namespace.
             name: frontend
             port:
+              # Port service mà Ingress sẽ forward request tới.
               number: 3000

@@ -1,10 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Tập hợp toàn bộ manifest nền tảng của môi trường base để áp dụng bằng Kustomize.
 resources:
+  # Namespace nên được tạo trước để các resource namespaced có nơi triển khai.
   - namespace.yaml
+  # Secret và ConfigMap chứa cấu hình dùng chung cho ứng dụng.
   - config/secrets.yaml
   - config/configmap.yaml
+  # Nhóm hạ tầng observability và messaging.
   - infrastructure/kafka.yaml
   - infrastructure/kafka-ui.yaml
   - infrastructure/kube-state-metrics.yaml
@@ -12,17 +16,21 @@ resources:
   - infrastructure/promtail-rbac.yaml
   - infrastructure/prometheus-rbac.yaml
   - infrastructure/monitoring.yaml
+  # Các workload/service chính của hệ thống.
   - services/order-service.yaml
   - services/inventory-service.yaml
   - services/frontend.yaml
+  # Chính sách vận hành: autoscaling, quota/PDB, và đường vào từ bên ngoài.
   - config/hpa.yaml
   - config/quotas.yaml
   - ingress.yaml
 
 configMapGenerator:
+  # Sinh ConfigMap từ các file cấu hình monitoring thay vì hard-code inline trong YAML.
   - name: monitoring-configs
     namespace: microbooks
     files:
+      # Cú pháp key=path cho phép đặt tên key trong ConfigMap khác với tên file nguồn nếu cần.
       - prometheus.yml=config/monitoring/prometheus.yml
       - loki-config.yaml=config/monitoring/loki-config.yml
       - tempo.yaml=config/monitoring/tempo.yml
@@ -33,4 +41,5 @@ configMapGenerator:
       - microservices-dashboard.json=config/monitoring/microbooks-dashboard.json
 
 generatorOptions:
+  # Giữ tên ConfigMap cố định để các manifest tham chiếu trực tiếp không cần cập nhật hash.
   disableNameSuffixHash: true

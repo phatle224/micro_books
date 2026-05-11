@@ -1,38 +1,51 @@
+ # Loki chạy ở chế độ single-binary nội bộ, không bật multi-tenant auth.
 auth_enabled: false
 
 server:
+  # Cổng HTTP API/UI nội bộ của Loki.
   http_listen_port: 3100
 
 common:
+  # Thư mục gốc Loki dùng để lưu chunks, rule và dữ liệu nội bộ.
   path_prefix: /loki
   storage:
     filesystem:
+      # Nơi lưu dữ liệu log chunks trên local filesystem.
       chunks_directory: /loki/chunks
+      # Nơi lưu rule files nếu dùng ruler cục bộ.
       rules_directory: /loki/rules
+  # Single replica nên replication_factor=1.
   replication_factor: 1
   ring:
+    # Instance hiện tại tự quảng bá bằng loopback vì chạy đơn node/service nội bộ.
     instance_addr: 127.0.0.1
     kvstore:
+      # Ring state lưu trong memory, phù hợp môi trường dev/lab đơn giản.
       store: inmemory
 
 
 schema_config:
   configs:
+    # Định nghĩa schema/index cho dữ liệu log từ mốc thời gian này trở đi.
     - from: 2020-10-15
       store: tsdb
       object_store: filesystem
       schema: v13
       index:
+        # Prefix cho index files và chu kỳ tạo index theo ngày.
         prefix: index_
         period: 24h
 
 limits_config:
+  # Giữ log trong 168 giờ = 7 ngày.
   retention_period: 168h
 
 compactor:
+  # Compactor thực thi retention và dọn dẹp block/index cũ.
   working_directory: /loki/compactor
   retention_enabled: true
   delete_request_store: filesystem
 
 ruler:
+  # Placeholder cho Alertmanager; chỉ hữu ích khi cấu hình Loki recording/alert rules.
   alertmanager_url: http://localhost:9093

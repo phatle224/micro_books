@@ -1,11 +1,15 @@
+# Cấu hình Grafana Provisioning - Dashboard Provider
+# File này chỉ định nơi Grafana tìm các file dashboard JSON để tự động tải.
+# Khi thêm file .json vào thư mục được cấu hình bên dưới, dashboard sẽ xuất hiện
+# trong Grafana sau khi khởi động lại (không cần import tay qua UI).
 apiVersion: 1
 
 providers:
   - name: microbooks
-    orgId: 1
-    folder: MicroBooks
-    type: file
-    disableDeletion: true
-    allowUiUpdates: true
+    orgId: 1                   # Organization ID mặc định của Grafana
+    folder: MicroBooks         # Tên thư mục hiển thị trong sidebar Grafana
+    type: file                 # Đọc dashboard từ file hệ thống (không phải database)
+    disableDeletion: true      # Ngăn xóa dashboard từ UI — chỉ cho phép xóa bằng cách xóa file JSON
+    allowUiUpdates: true       # Cho phép chỉnh sửa dashboard từ UI (thay đổi sẽ không được lưu vào file)
     options:
-      path: /var/lib/grafana/dashboards
+      path: /var/lib/grafana/dashboards  # Thư mục trong container chứa các file dashboard .json

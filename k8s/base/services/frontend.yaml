@@ -1,23 +1,36 @@
+# ============================================================
+# Frontend — Deployment + Service
+#
+# Chạy giao diện web Next.js, phục vụ người dùng cuối.
+# Frontend không kết nối trực tiếp với database — mọi dữ liệu
+# đều đi qua Order Service và Inventory Service qua HTTP.
+# ============================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
   namespace: microbooks
 spec:
-  replicas: 1
+  replicas: 1  # Khởi động với 1 pod; HPA sẽ tự scale nếu được cấu hình
   selector:
     matchLabels:
-      app: frontend
+      app: frontend  # Phải khớp với labels trong template bên dưới
   template:
     metadata:
       labels:
-        app: frontend
+        app: frontend  # Label dùng để Service selector tìm đúng pod này
     spec:
       containers:
       - name: frontend
         image: kietne1211/microbooks-frontend:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 3000  # Cổng Next.js lắng nghe bên trong container
+
+        # --- Liveness Probe ---
+        # K8s gọi GET / mỗi 10s để kiểm tra container còn sống không.
+        # Nếu thất bại 3 lần liên tiếp → container bị restart (Auto Healing).
+        # initialDelaySeconds=30: chờ Next.js build xong trước khi bắt đầu probe.
         livenessProbe:
           httpGet:
             path: /
@@ -26,6 +39,12 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+
+        # --- Readiness Probe ---
+        # K8s gọi GET / mỗi 5s để kiểm tra container đã sẵn sàng nhận traffic chưa.
+        # Nếu thất bại → pod bị tạm gỡ khỏi Service (không nhận request mới),
+        # nhưng KHÔNG bị restart — khác với Liveness Probe.
+        # initialDelaySeconds=10: ngắn hơn liveness vì chỉ cần server bắt đầu lắng nghe.
         readinessProbe:
           httpGet:
             path: /
@@ -34,25 +53,39 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 5
           failureThreshold: 3
+
+        # --- Resource Limits & Requests ---
+        # requests: lượng tài nguyên được đảm bảo cấp phát khi pod được schedule.
+        # limits:   ngưỡng tối đa — vượt quá CPU sẽ bị throttle, vượt memory bị OOMKill.
+        # Frontend Next.js nặng hơn backend nên memory limit cao hơn (1Gi vs 256Mi).
         resources:
           limits:
-            cpu: "500m"
+            cpu: "500m"      # 500m = 0.5 core
             memory: "1Gi"
           requests:
             cpu: "200m"
             memory: "512Mi"
+
         env:
+        # URL của Order Service — lấy từ ConfigMap để dễ thay đổi theo môi trường
         - name: ORDER_SERVICE_URL
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: ORDER_SERVICE_URL
+        # URL của Inventory Service — lấy từ ConfigMap
         - name: INVENTORY_SERVICE_URL
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: INVENTORY_SERVICE_URL
+
 ---
+# ============================================================
+# Service — Expose Frontend ra ngoài cluster
+# type: LoadBalancer cấp một External IP để truy cập từ trình duyệt.
+# Trên môi trường local (minikube), dùng: minikube service frontend -n microbooks
+# ============================================================
 apiVersion: v1
 kind: Service
 metadata:
@@ -60,9 +93,9 @@ metadata:
   namespace: microbooks
 spec:
   selector:
-    app: frontend
+    app: frontend  # Chỉ route traffic đến pod có label app=frontend
   ports:
   - protocol: TCP
-    port: 3000
-    targetPort: 3000
+    port: 3000        # Cổng Service expose ra ngoài
+    targetPort: 3000  # Cổng container nhận traffic vào
   type: LoadBalancer

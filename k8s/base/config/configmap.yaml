@@ -1,13 +1,21 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  # ConfigMap gom các biến cấu hình không nhạy cảm dùng chung cho nhiều service.
   name: microbooks-config
   namespace: microbooks
 data:
+  # Địa chỉ broker Kafka nội bộ trong cluster.
   KAFKA_BROKER: "kafka-service:9092"
+  # Endpoint nội bộ để frontend hoặc service khác gọi sang order-service.
   ORDER_SERVICE_URL: "http://order-service:3001"
+  # Endpoint nội bộ để các thành phần gọi sang inventory-service.
   INVENTORY_SERVICE_URL: "http://inventory-service:3002"
+  # Port container/order-service sẽ bind bên trong Pod.
   ORDER_SERVICE_PORT: "3001"
+  # Port container/inventory-service sẽ bind bên trong Pod.
   INVENTORY_SERVICE_PORT: "3002"
+  # Port phục vụ HTTP của frontend container.
   FRONTEND_PORT: "3000"
+  # Endpoint OTLP HTTP để ứng dụng đẩy telemetry sang OpenTelemetry Collector.
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"

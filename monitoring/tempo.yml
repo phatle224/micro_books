@@ -1,48 +1,81 @@
-server:
-  http_listen_port: 3200
+# Cấu hình Tempo — Distributed Tracing Backend
+#
+# Tempo là hệ thống lưu trữ và truy vấn distributed traces, được thiết kế
+# để hoạt động hiệu quả với chi phí lưu trữ thấp (không đánh index toàn bộ span).
+#
+# Luồng trace trong dự án:
+#   Services --OTLP--> OTel Collector --OTLP--> Tempo --TraceQL--> Grafana
+#
+# Ngoài ra, Tempo có thể tự sinh metrics từ traces (RED metrics: Rate, Errors, Duration)
+# và đẩy ngược về Prometheus qua remote_write.
 
+server:
+  http_listen_port: 3200  # Cổng HTTP API — Grafana dùng để query traces
+
+# =============================================================
+# DISTRIBUTOR — Nhận traces đầu vào
+# =============================================================
 distributor:
   receivers:
     otlp:
       protocols:
-        grpc:
-        http:
+        grpc:   # Nhận traces qua gRPC (cổng 4317 — dùng chung với OTel chuẩn)
+        http:   # Nhận traces qua HTTP (cổng 4318)
 
+# =============================================================
+# INGESTER — Xử lý và buffer traces trước khi ghi vào storage
+# =============================================================
 ingester:
   lifecycler:
     ring:
       kvstore:
-        store: inmemory
+        store: inmemory  # Single-node: dùng RAM thay vì etcd/consul
       replication_factor: 1
-  trace_idle_period: 10s
-  max_block_bytes: 1000000
-  max_block_duration: 5m
+  trace_idle_period: 10s    # Sau 10s không có span mới, coi trace là hoàn chỉnh và flush xuống storage
+  max_block_bytes: 1000000  # Flush block xuống storage khi đạt ~1MB
+  max_block_duration: 5m    # Hoặc flush sau tối đa 5 phút dù chưa đầy
 
+# =============================================================
+# COMPACTOR — Nén và dọn dẹp dữ liệu cũ
+# =============================================================
 compactor:
   compaction:
-    block_retention: 24h
+    block_retention: 24h  # Xóa traces sau 24 giờ — điều chỉnh lên nếu cần lưu lâu hơn
 
+# =============================================================
+# METRICS GENERATOR — Sinh RED metrics từ traces
+# Tính năng này tạo ra các metric như request rate, error rate, latency
+# trực tiếp từ span data, không cần instrument thêm trong code.
+# =============================================================
 metrics_generator:
   registry:
     external_labels:
-      source: tempo
+      source: tempo  # Gắn label để phân biệt metrics do Tempo tạo ra trong Prometheus
   storage:
-    path: /var/tempo/generator/wal
+    path: /var/tempo/generator/wal  # WAL (Write-Ahead Log) đảm bảo không mất metrics khi restart
     remote_write:
-      - url: http://prometheus:9090/api/v1/write
-        send_exemplars: true
+      - url: http://prometheus:9090/api/v1/write  # Đẩy metrics vào Prometheus
+        send_exemplars: true  # Kèm exemplar (liên kết từ metric point đến trace ID) để drill-down
 
+# =============================================================
+# STORAGE — Cấu hình nơi lưu trữ trace data
+# =============================================================
 storage:
   trace:
-    backend: local
+    backend: local  # Lưu trữ trên filesystem local (dùng object storage như S3 cho production)
     local:
-      path: /var/tempo/traces
+      path: /var/tempo/traces  # Thư mục lưu các block trace đã được flush
     wal:
-      path: /var/tempo/wal
+      path: /var/tempo/wal     # Write-Ahead Log: buffer tạm thời, phòng mất dữ liệu khi crash
 
+# =============================================================
+# OVERRIDES — Giới hạn tài nguyên để bảo vệ hệ thống
+# =============================================================
 overrides:
   defaults:
     ingestion:
-      max_traces_per_user: 10000
+      max_traces_per_user: 10000  # Tối đa 10,000 traces đang active trong ingester cùng lúc
     metrics_generator:
       processors: [service-graphs, span-metrics]
+      # service-graphs: tạo đồ thị phụ thuộc giữa các service
+      # span-metrics:   tạo RED metrics (rate, errors, duration) theo từng span

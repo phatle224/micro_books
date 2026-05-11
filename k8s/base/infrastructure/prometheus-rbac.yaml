@@ -1,30 +1,52 @@
+# ============================================================
+# Prometheus RBAC — Phân quyền cho Prometheus
+#
+# Prometheus cần đọc thông tin từ Kubernetes API để:
+#   1. Tự động phát hiện (service discovery) các target cần scrape
+#   2. Đọc metrics từ kubelet (/metrics, /metrics/cadvisor)
+#
+# Không có file này, Prometheus chỉ có thể scrape các target
+# được cấu hình tĩnh trong prometheus.yml — không scrape được
+# pod/service mới tạo tự động.
+# ============================================================
+
+# ServiceAccount tạo danh tính cho Prometheus pod trong K8s RBAC
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
   namespace: microbooks
 ---
+# ClusterRole định nghĩa quyền đọc trên toàn cluster.
+# Dùng ClusterRole (không phải Role) vì Prometheus cần đọc
+# node và cadvisor metrics ở cấp cluster, không chỉ 1 namespace.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: prometheus
 rules:
+  # Quyền đọc các resource K8s để service discovery và scrape
   - apiGroups: [""]
     resources:
-      - nodes
-      - nodes/proxy
-      - nodes/metrics
-      - services
-      - endpoints
-      - pods
+      - nodes           # Thông tin node — dùng cho node exporter
+      - nodes/proxy     # Proxy qua node để lấy metrics từ kubelet
+      - nodes/metrics   # CPU/RAM của node từ kubelet
+      - services        # Danh sách service để tự động tìm scrape target
+      - endpoints       # IP thực của pod đứng sau service
+      - pods            # Metadata pod (labels, annotations) để lọc scrape target
     verbs: ["get", "list", "watch"]
+  # Quyền đọc Ingress — dùng cho rule-based service discovery
   - apiGroups: ["extensions", "networking.k8s.io"]
     resources:
       - ingresses
     verbs: ["get", "list", "watch"]
+  # Quyền truy cập các URL ngoài resource K8s:
+  #   /metrics          → metrics của các component K8s (scheduler, controller-manager)
+  #   /metrics/cadvisor → container metrics từ cAdvisor nhúng trong kubelet
   - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
     verbs: ["get"]
 ---
+# ClusterRoleBinding gắn ClusterRole vào ServiceAccount của Prometheus pod
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

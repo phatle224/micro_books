@@ -1,10 +1,25 @@
+# ============================================================
+# Kafka Infrastructure — Zookeeper + Kafka
+#
+# Kafka là message broker trung tâm của hệ thống, xử lý giao tiếp
+# bất đồng bộ giữa các microservice:
+#   Order Service  --publish--> Kafka --consume--> Inventory Service
+#
+# Zookeeper là thành phần bắt buộc của Kafka phiên bản cũ (< 3.x):
+# quản lý metadata cluster, election leader cho broker và partition.
+# Thứ tự khởi động: Zookeeper phải chạy trước Kafka.
+# ============================================================
+
+# ============================================================
+# ZOOKEEPER — Coordinator cho Kafka cluster
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: zookeeper
   namespace: microbooks
 spec:
-  replicas: 1
+  replicas: 1  # Single-node: đủ cho môi trường dev/local
   selector:
     matchLabels:
       app: zookeeper
@@ -15,14 +30,14 @@ spec:
     spec:
       containers:
       - name: zookeeper
-        image: confluentinc/cp-zookeeper:7.5.0
+        image: confluentinc/cp-zookeeper:7.5.0  # Phiên bản khớp với Kafka bên dưới
         ports:
-        - containerPort: 2181
+        - containerPort: 2181  # Cổng mặc định Zookeeper lắng nghe kết nối từ Kafka
         env:
         - name: ZOOKEEPER_CLIENT_PORT
           value: "2181"
         - name: ZOOKEEPER_TICK_TIME
-          value: "2000"
+          value: "2000"  # Đơn vị thời gian cơ bản (ms) — dùng để tính timeout session
         resources:
           requests:
             cpu: "100m"
@@ -41,9 +56,14 @@ spec:
     app: zookeeper
   ports:
   - protocol: TCP
-    port: 2181
+    port: 2181        # Kafka kết nối đến đây bằng địa chỉ "zookeeper:2181"
     targetPort: 2181
+  # type mặc định là ClusterIP — Zookeeper chỉ cần truy cập nội bộ từ Kafka
+
 ---
+# ============================================================
+# KAFKA — Message Broker
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -52,7 +72,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate
+    type: Recreate  # Dừng pod cũ hoàn toàn trước khi tạo pod mới — tránh 2 broker cùng ID chạy song song
   selector:
     matchLabels:
       app: kafka
@@ -68,29 +88,32 @@ spec:
         - containerPort: 9092
         env:
         - name: KAFKA_BROKER_ID
-          value: "1"
+          value: "1"  # ID duy nhất của broker trong cluster — chỉ có 1 broker nên dùng ID=1
         - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zookeeper:2181"
+          value: "zookeeper:2181"  # Kafka đăng ký và phối hợp với Zookeeper ở địa chỉ này
+        # Địa chỉ mà các client (producer/consumer) dùng để kết nối đến broker.
+        # Phải dùng tên Service "kafka-service" vì đó là hostname trong cluster K8s.
         - name: KAFKA_ADVERTISED_LISTENERS
           value: "PLAINTEXT://kafka-service:9092"
         - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-          value: "1"
+          value: "1"  # Single-node: chỉ 1 bản sao — nếu tăng số broker phải tăng giá trị này
         - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
-          value: "true"
+          value: "true"  # Tự động tạo topic khi producer gửi message lần đầu — tiện cho dev
+        # Giới hạn JVM heap — tránh Kafka chiếm hết RAM của node
         - name: KAFKA_HEAP_OPTS
-          value: "-Xmx512m -Xms256m"
+          value: "-Xmx512m -Xms256m"  # Max heap 512MB, initial heap 256MB
         resources:
           requests:
             cpu: "200m"
             memory: "512Mi"
           limits:
             cpu: "500m"
-            memory: "1.5Gi"
+            memory: "1.5Gi"  # Kafka JVM cần nhiều RAM hơn các service khác
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka-service
+  name: kafka-service  # Tên này phải khớp với KAFKA_ADVERTISED_LISTENERS ở trên
   namespace: microbooks
 spec:
   selector:
@@ -99,3 +122,4 @@ spec:
   - protocol: TCP
     port: 9092
     targetPort: 9092
+  # type mặc định là ClusterIP — chỉ Order/Inventory Service cần kết nối nội bộ

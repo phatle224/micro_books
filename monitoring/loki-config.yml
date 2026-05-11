@@ -1,30 +1,44 @@
+# Cấu hình Loki — Log Aggregation
+#
+# Loki là hệ thống tổng hợp log, được thiết kế để hoạt động cùng Grafana.
+# Khác với Elasticsearch, Loki chỉ đánh index trên metadata (labels) của log,
+# không đánh index nội dung — giúp tiết kiệm tài nguyên đáng kể.
+#
+# Luồng log trong dự án:
+#   Pod logs → Promtail (thu thập) → Loki (lưu trữ) → Grafana (hiển thị)
+
+# Tắt xác thực — phù hợp cho môi trường local/dev.
+# Bật lên (true) khi triển khai production để yêu cầu tenant ID.
 auth_enabled: false
 
 server:
-  http_listen_port: 3100
+  http_listen_port: 3100  # Cổng API chính — Promtail push log vào đây, Grafana đọc từ đây
 
 common:
   path_prefix: /loki
   storage:
     filesystem:
-      chunks_directory: /loki/chunks
-      rules_directory: /loki/rules
-  replication_factor: 1
+      chunks_directory: /loki/chunks  # Nơi lưu các block log đã được nén
+      rules_directory: /loki/rules    # Nơi lưu các alerting rules của Loki Ruler
+  replication_factor: 1  # Single-node: chỉ có 1 bản sao dữ liệu (phù hợp cho local)
   ring:
     instance_addr: 127.0.0.1
     kvstore:
-      store: inmemory
-
+      store: inmemory  # Dùng bộ nhớ RAM cho ring coordination (không cần etcd/consul)
 
 schema_config:
   configs:
+    # Schema v13 với TSDB là lựa chọn hiện đại nhất của Loki (từ phiên bản 2.8+)
+    # TSDB cho tốc độ query nhanh hơn so với BoltDB cũ
     - from: 2020-10-15
       store: tsdb
       object_store: filesystem
       schema: v13
       index:
         prefix: index_
-        period: 24h
+        period: 24h  # Mỗi ngày tạo một file index riêng — dễ xóa log cũ theo ngày
 
 ruler:
+  # Địa chỉ Alertmanager để Loki gửi cảnh báo khi có rule vi phạm.
+  # Trong setup hiện tại chưa có Alertmanager nên URL này chỉ là placeholder.
   alertmanager_url: http://localhost:9093

@@ -1,10 +1,19 @@
+# ============================================================
+# Inventory Service — Deployment + Service
+#
+# Quản lý kho sách: kiểm tra tồn kho, cập nhật số lượng sau
+# khi có đơn hàng. Lắng nghe sự kiện từ Kafka do Order Service
+# publish và phản hồi lại kết quả qua Kafka.
+# Kết nối: MongoDB (lưu trữ) + Kafka (nhận sự kiện đặt hàng)
+# ============================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory-service
   namespace: microbooks
 spec:
-  replicas: 1
+  replicas: 1  # Khởi động với 1 pod; HPA sẽ tự scale nếu được cấu hình
   selector:
     matchLabels:
       app: inventory-service
@@ -18,18 +27,31 @@ spec:
         image: kietne1211/microbooks-inventory-service:latest
         ports:
         - containerPort: 3002
+
+        # --- Liveness Probe ---
+        # Dùng endpoint /health thay vì / — endpoint chuyên dụng kiểm tra sức khoẻ,
+        # trả về 200 khi service sẵn sàng và kết nối MongoDB/Kafka còn hoạt động.
+        # initialDelaySeconds=10: Inventory Service khởi động nhanh hơn Frontend.
         livenessProbe:
           httpGet:
             path: /health
             port: 3002
           initialDelaySeconds: 10
           periodSeconds: 10
+
+        # --- Readiness Probe ---
+        # Tần suất kiểm tra 5s — nhanh hơn liveness để phát hiện sớm khi service
+        # hết overload và có thể nhận request trở lại.
         readinessProbe:
           httpGet:
             path: /health
             port: 3002
           initialDelaySeconds: 5
           periodSeconds: 5
+
+        # --- Resource Limits & Requests ---
+        # Backend nhẹ hơn frontend: memory limit 256Mi đủ cho FastAPI + Kafka consumer.
+        # CPU request thấp (100m) vì service chủ yếu chờ I/O (Kafka, MongoDB).
         resources:
           limits:
             cpu: "500m"
@@ -37,29 +59,48 @@ spec:
           requests:
             cpu: "100m"
             memory: "128Mi"
+
         env:
+        # Credentials MongoDB — lấy từ Secret (mã hoá base64), không để lộ trong ConfigMap
         - name: MONGO_URI
           valueFrom:
             secretKeyRef:
               name: microbooks-secrets
               key: MONGO_URI
+
+        # Địa chỉ Kafka broker — lấy từ ConfigMap vì không phải thông tin nhạy cảm
         - name: KAFKA_BROKER
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: KAFKA_BROKER
+
+        # Cổng service lắng nghe — truyền qua env để app đọc thay vì hardcode trong code
         - name: SERVICE_PORT
           value: "3002"
+
+        # --- OpenTelemetry Configuration ---
+        # Bật OpenTelemetry để tự động instrument HTTP request và gửi traces/metrics
         - name: OTEL_ENABLED
           value: "true"
+
+        # Tên service hiển thị trong Grafana Tempo và Prometheus (label service_name)
         - name: OTEL_SERVICE_NAME
           value: "inventory-service"
+
+        # Endpoint của OTel Collector nhận dữ liệu qua gRPC (cổng 4317)
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: OTEL_EXPORTER_OTLP_ENDPOINT
+
 ---
+# ============================================================
+# Service — Expose Inventory Service
+# type: LoadBalancer để Order Service và Frontend có thể gọi HTTP trực tiếp.
+# Trong production nên dùng ClusterIP + Ingress thay vì LoadBalancer cho internal service.
+# ============================================================
 apiVersion: v1
 kind: Service
 metadata:

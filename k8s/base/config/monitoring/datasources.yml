@@ -1,40 +1,51 @@
 apiVersion: 1
 
 datasources:
+  # Nguồn metric mặc định cho dashboard và alert query.
   - name: Prometheus
     type: prometheus
+    # UID cố định để dashboard khác có thể tham chiếu ổn định.
     uid: prometheus
+    # proxy: Grafana server đứng ra gọi datasource thay vì browser gọi trực tiếp.
     access: proxy
     url: http://prometheus:9090
     isDefault: true
 
+  # Nguồn log tập trung từ Loki.
   - name: Loki
     type: loki
     uid: loki
     access: proxy
     url: http://loki:3100
 
+  # Nguồn trace từ Tempo; đồng thời liên kết trace với log/metric.
   - name: Tempo
     type: tempo
     uid: tempo
     access: proxy
     url: http://tempo:3200
     jsonData:
+      # Tempo datasource dùng HTTP GET cho các truy vấn đọc dữ liệu.
       httpMethod: GET
       search:
         hide: false
       traceQuery:
+        # Cho phép mở rộng khung thời gian quanh trace để nhìn đủ span liên quan.
         timeShiftEnabled: true
         spanStartTimeShift: "-1h"
         spanEndTimeShift: "1h"
       nodeGraph:
+        # Bật sơ đồ quan hệ giữa các service/span trên Grafana.
         enabled: true
       serviceMap:
+        # Dùng Prometheus để dựng service map metrics cho trace.
         datasourceUid: prometheus
       tracesToLogsV2:
+        # Liên kết từ trace sang log trong Loki bằng trace/span id.
         datasourceUid: loki
         filterByTraceID: true
         filterBySpanID: true
         customQuery: false
       lokiSearch:
+        # Cho phép tìm trace liên quan từ dữ liệu log của Loki.
         datasourceUid: loki

@@ -1,14 +1,18 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  # HPA cho frontend: tự tăng/giảm số Pod dựa trên CPU usage.
   name: frontend-hpa
   namespace: microbooks
 spec:
   scaleTargetRef:
+    # Liên kết HPA này với Deployment frontend.
     apiVersion: apps/v1
     kind: Deployment
     name: frontend
+  # Luôn giữ tối thiểu 1 replica để service không bị gián đoạn hoàn toàn.
   minReplicas: 1
+  # Giới hạn scale-out tối đa để tránh dùng tài nguyên vượt dự kiến.
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -16,28 +20,35 @@ spec:
       name: cpu
       target:
         type: Utilization
+        # Khi CPU trung bình vượt 70% request CPU, HPA sẽ cân nhắc scale thêm.
         averageUtilization: 70
   behavior:
     scaleUp:
+      # Scale up ngay khi vượt ngưỡng, không chờ ổn định thêm.
       stabilizationWindowSeconds: 0
       policies:
       - type: Pods
+        # Mỗi chu kỳ 15s được tăng tối đa 4 Pod.
         value: 4
         periodSeconds: 15
     scaleDown:
+      # Chờ 30s trước khi scale down để tránh rung lắc khi tải dao động ngắn.
       stabilizationWindowSeconds: 30
       policies:
       - type: Pods
+        # Mỗi chu kỳ 15s được giảm tối đa 4 Pod.
         value: 4
         periodSeconds: 15
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  # HPA cho order-service, dùng ngưỡng bảo thủ hơn về số replica tối đa.
   name: order-service-hpa
   namespace: microbooks
 spec:
   scaleTargetRef:
+    # Liên kết với Deployment order-service.
     apiVersion: apps/v1
     kind: Deployment
     name: order-service
@@ -49,28 +60,33 @@ spec:
       name: cpu
       target:
         type: Utilization
+        # Scale khi CPU trung bình vượt 80% request CPU.
         averageUtilization: 80
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 0
       policies:
       - type: Pods
+        # Mỗi 15s tăng tối đa 2 Pod để tránh tăng đột ngột.
         value: 2
         periodSeconds: 15
     scaleDown:
       stabilizationWindowSeconds: 30
       policies:
       - type: Pods
+        # Mỗi 15s giảm tối đa 2 Pod sau khi qua cửa sổ ổn định.
         value: 2
         periodSeconds: 15
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  # HPA cho inventory-service với cấu hình tương tự order-service.
   name: inventory-service-hpa
   namespace: microbooks
 spec:
   scaleTargetRef:
+    # Liên kết với Deployment inventory-service.
     apiVersion: apps/v1
     kind: Deployment
     name: inventory-service

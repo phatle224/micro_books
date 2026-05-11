@@ -1,9 +1,25 @@
+# ============================================================
+# Promtail RBAC — Phân quyền cho Promtail
+#
+# Promtail cần đọc Kubernetes API để:
+#   1. Tự động phát hiện pod mới qua Kubernetes Service Discovery
+#   2. Lấy metadata (namespace, pod name, container name, labels)
+#      để gắn vào log trước khi đẩy lên Loki
+#
+# Không có file này, Promtail không biết pod nào đang chạy
+# và không thể gắn label chính xác vào log.
+# ============================================================
+
+# ServiceAccount tạo danh tính cho Promtail pod trong K8s RBAC
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: promtail
   namespace: microbooks
 ---
+# ClusterRole định nghĩa quyền đọc thông tin pod/node trên toàn cluster.
+# Dùng ClusterRole (không phải Role) vì Promtail thu thập log từ
+# tất cả namespace, không chỉ namespace microbooks.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -11,13 +27,16 @@ metadata:
 rules:
   - apiGroups: [""]
     resources:
-      - nodes
-      - nodes/proxy
-      - services
-      - endpoints
-      - pods
+      - nodes           # Thông tin node — xác định pod đang chạy trên node nào
+      - nodes/proxy     # Truy cập kubelet API qua node proxy
+      - services        # Metadata service — dùng để enrich log với service info
+      - endpoints       # IP thực của pod — dùng để match log với service
+      - pods            # Metadata pod: name, namespace, labels, uid — gắn vào log làm label
     verbs: ["get", "list", "watch"]
+    # "watch" đặc biệt quan trọng: cho phép Promtail nhận thông báo ngay khi pod
+    # mới được tạo hoặc xóa, và bắt đầu/dừng thu thập log tương ứng
 ---
+# ClusterRoleBinding gắn ClusterRole vào ServiceAccount của Promtail pod
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

@@ -1,14 +1,36 @@
+# ============================================================
+# Kube-State-Metrics — Metrics về trạng thái K8s Objects
+#
+# kube-state-metrics lắng nghe Kubernetes API và chuyển đổi
+# trạng thái các object K8s thành metrics Prometheus, ví dụ:
+#   kube_pod_status_phase            → pod đang Running/Pending/Failed
+#   kube_horizontalpodautoscaler_*   → số replica HPA mong muốn/thực tế
+#   kube_deployment_status_replicas  → số pod available của deployment
+#
+# Đây là nguồn dữ liệu cho các panel "Auto Scaling & Auto Healing"
+# trong Grafana dashboard.
+#
+# Khác biệt với Metrics Server:
+#   Metrics Server  → CPU/RAM thực tế đang dùng (dùng cho HPA scale)
+#   kube-state-metrics → trạng thái object K8s (dùng cho monitoring/alerting)
+# ============================================================
+
+# ServiceAccount để pod có danh tính trong K8s RBAC
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kube-state-metrics
   namespace: microbooks
 ---
+# ClusterRole định nghĩa quyền đọc (list, watch) trên tất cả resource K8s cần thiết.
+# Chỉ dùng "list" và "watch" — không cần "get", "create", "update", "delete".
+# ClusterRole (không phải Role) vì cần đọc resource trên TOÀN cluster, không chỉ 1 namespace.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: kube-state-metrics
 rules:
+  # Core API group — các resource cơ bản của K8s
   - apiGroups: [""]
     resources:
       - configmaps
@@ -25,6 +47,7 @@ rules:
       - services
       - secrets
     verbs: ["list", "watch"]
+  # apps API group — Deployment, ReplicaSet, StatefulSet, DaemonSet
   - apiGroups: ["apps"]
     resources:
       - daemonsets
@@ -32,47 +55,57 @@ rules:
       - replicasets
       - statefulsets
     verbs: ["list", "watch"]
+  # autoscaling API group — HPA metrics (dùng cho dashboard Auto Scaling)
   - apiGroups: ["autoscaling"]
     resources:
       - horizontalpodautoscalers
     verbs: ["list", "watch"]
+  # batch API group — Job và CronJob
   - apiGroups: ["batch"]
     resources:
       - cronjobs
       - jobs
     verbs: ["list", "watch"]
+  # networking.k8s.io — Ingress và NetworkPolicy
   - apiGroups: ["networking.k8s.io"]
     resources:
       - ingresses
       - networkpolicies
     verbs: ["list", "watch"]
+  # policy — PodDisruptionBudget
   - apiGroups: ["policy"]
     resources:
       - poddisruptionbudgets
     verbs: ["list", "watch"]
+  # storage.k8s.io — StorageClass và VolumeAttachment
   - apiGroups: ["storage.k8s.io"]
     resources:
       - storageclasses
       - volumeattachments
     verbs: ["list", "watch"]
+  # admissionregistration — Webhook configurations
   - apiGroups: ["admissionregistration.k8s.io"]
     resources:
       - mutatingwebhookconfigurations
       - validatingwebhookconfigurations
     verbs: ["list", "watch"]
+  # coordination.k8s.io — Lease objects (dùng cho leader election)
   - apiGroups: ["coordination.k8s.io"]
     resources:
       - leases
     verbs: ["list", "watch"]
+  # certificates.k8s.io — CertificateSigningRequest
   - apiGroups: ["certificates.k8s.io"]
     resources:
       - certificatesigningrequests
     verbs: ["list", "watch"]
+  # discovery.k8s.io — EndpointSlice (thay thế Endpoints trong K8s mới)
   - apiGroups: ["discovery.k8s.io"]
     resources:
       - endpointslices
     verbs: ["list", "watch"]
 ---
+# ClusterRoleBinding gắn ClusterRole vào ServiceAccount của pod
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -86,6 +119,9 @@ subjects:
     name: kube-state-metrics
     namespace: microbooks
 ---
+# ============================================================
+# Deployment — chạy kube-state-metrics pod
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -101,24 +137,27 @@ spec:
       labels:
         app: kube-state-metrics
     spec:
-      serviceAccountName: kube-state-metrics
+      serviceAccountName: kube-state-metrics  # Gắn ServiceAccount có quyền đọc K8s API
       containers:
         - name: kube-state-metrics
           image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
           ports:
             - containerPort: 8080
-              name: http-metrics
+              name: http-metrics  # Prometheus scrape metrics từ cổng này
           args:
             - --port=8080
+            # Chỉ thu thập metrics cho các resource cần thiết — bỏ qua resource không dùng
+            # để giảm tải API server và giảm số lượng metrics trong Prometheus
             - --resources=pods,deployments,replicasets,nodes,namespaces,services,configmaps,secrets,horizontalpodautoscalers
           resources:
             requests:
-              cpu: "50m"
+              cpu: "50m"    # kube-state-metrics rất nhẹ vì chỉ đọc cache từ informer
               memory: "64Mi"
             limits:
               cpu: "200m"
               memory: "256Mi"
 ---
+# Service để Prometheus scrape metrics
 apiVersion: v1
 kind: Service
 metadata:
@@ -130,4 +169,5 @@ spec:
   ports:
     - name: http-metrics
       port: 8080
-      targetPort: http-metrics
+      targetPort: http-metrics  # Dùng tên port thay vì số — dễ thay đổi sau này
+  # type mặc định là ClusterIP — Prometheus scrape nội bộ, không cần expose ra ngoài

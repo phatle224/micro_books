@@ -1,46 +1,73 @@
+# Cấu hình OpenTelemetry Collector
+#
+# OTel Collector đóng vai trò "trạm trung chuyển" observability:
+# nhận dữ liệu từ các microservice, xử lý, rồi chuyển tiếp đến các backend phù hợp.
+#
+# Luồng dữ liệu:
+#   [Order/Inventory Service] --OTLP--> [OTel Collector] --traces--> [Tempo]
+#                                                         --metrics-> [Prometheus]
+#                                                         --logs   -> (logging exporter)
+#
+# Pipeline được chia thành 3 giai đoạn: receivers → processors → exporters
+
+# =============================================================
+# RECEIVERS — Điểm nhận dữ liệu đầu vào từ các service
+# =============================================================
 receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:4317
+        endpoint: 0.0.0.0:4317  # gRPC — giao thức mặc định, hiệu năng cao hơn HTTP
       http:
-        endpoint: 0.0.0.0:4318
+        endpoint: 0.0.0.0:4318  # HTTP/JSON — dễ debug, dùng khi gRPC bị chặn bởi proxy
 
+# =============================================================
+# PROCESSORS — Xử lý và làm giàu dữ liệu trước khi export
+# =============================================================
 processors:
   batch:
-    timeout: 5s
-    send_batch_size: 1024
+    timeout: 5s             # Gom dữ liệu trong tối đa 5 giây trước khi gửi đi
+    send_batch_size: 1024   # Hoặc gửi ngay khi đủ 1024 items — tránh gửi từng request nhỏ
   memory_limiter:
     check_interval: 1s
-    limit_percentage: 80
-    spike_limit_percentage: 25
+    limit_percentage: 80    # Từ chối nhận thêm dữ liệu khi RAM đạt 80%
+    spike_limit_percentage: 25  # Cho phép tăng đột biến thêm 25% trước khi hard-limit
   resourcedetection:
-    detectors: [env, system]
+    detectors: [env, system]  # Tự động phát hiện hostname, OS từ biến môi trường và hệ thống
     timeout: 2s
-  # Force service_name label for Prometheus
+  # Sao chép attribute 'service.name' (chuẩn OTLP) thành label 'service_name' (chuẩn Prometheus)
+  # Cần thiết vì Prometheus không hỗ trợ dấu chấm trong tên label
   attributes:
     actions:
       - key: service_name
         from_attribute: service.name
         action: insert
 
+# =============================================================
+# EXPORTERS — Đầu ra, gửi dữ liệu đến các backend lưu trữ
+# =============================================================
 exporters:
   otlp/tempo:
-    endpoint: tempo:4317
+    endpoint: tempo:4317  # Gửi traces đến Tempo qua gRPC
     tls:
-      insecure: true
+      insecure: true       # Không dùng TLS trong môi trường nội bộ (local/dev)
   prometheus:
-    endpoint: 0.0.0.0:8889
-    resource_to_telemetry_conversion: true # Critical for moving resource attributes to metric labels
+    endpoint: 0.0.0.0:8889              # Expose metrics endpoint để Prometheus pull về
+    resource_to_telemetry_conversion: true  # Chuyển resource attributes thành metric labels — bắt buộc để Prometheus nhận đúng service_name
   logging:
-    verbosity: basic
+    verbosity: basic  # In log cơ bản ra stdout của collector (dùng để debug)
 
+# =============================================================
+# SERVICE — Kết nối receivers, processors, exporters thành pipeline
+# =============================================================
 service:
   pipelines:
+    # Pipeline xử lý Distributed Traces
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, attributes, batch]
       exporters: [otlp/tempo, logging]
+    # Pipeline xử lý Metrics
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, attributes, batch]

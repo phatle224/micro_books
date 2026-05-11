@@ -1,31 +1,57 @@
+# Cấu hình Promtail — Log Collector cho Kubernetes
+#
+# Promtail là agent chạy trên mỗi node K8s, có nhiệm vụ:
+#   1. Tự động phát hiện các pod đang chạy qua Kubernetes Service Discovery
+#   2. Đọc file log từ thư mục /var/log/pods/ trên node
+#   3. Gắn thêm labels (namespace, pod, container, app) vào từng dòng log
+#   4. Đẩy log lên Loki để lưu trữ và query
+#
+# Luồng: Pod stdout/stderr → /var/log/pods/ → Promtail → Loki
+
 server:
-  http_listen_port: 9080
-  grpc_listen_port: 0
+  http_listen_port: 9080  # HTTP API để kiểm tra trạng thái Promtail (health, metrics)
+  grpc_listen_port: 0     # Tắt gRPC server (không cần thiết cho Promtail)
 
 positions:
+  # File lưu vị trí đọc cuối cùng của mỗi log file.
+  # Giúp Promtail tiếp tục đọc đúng chỗ sau khi restart, tránh đọc lại log cũ.
   filename: /tmp/positions.yaml
 
 clients:
+  # Địa chỉ Loki để Promtail đẩy log vào
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
+  # Tự động phát hiện và thu thập log từ tất cả pod trong K8s
   - job_name: kubernetes-pods
     kubernetes_sd_configs:
-      - role: pod
+      - role: pod  # Theo dõi tất cả Pod objects trong cluster
     pipeline_stages:
-      - docker: {}
+      - docker: {}  # Parse định dạng log JSON của Docker (timestamp, stream, log fields)
     relabel_configs:
+      # Chỉ giữ lại log từ namespace 'microbooks', bỏ qua tất cả namespace khác
       - source_labels: [__meta_kubernetes_namespace]
         regex: microbooks
         action: keep
+
+      # Tạo label 'namespace' từ metadata của pod (dùng để filter trong Grafana)
       - source_labels: [__meta_kubernetes_namespace]
         target_label: namespace
+
+      # Tạo label 'pod' chứa tên pod (ví dụ: order-service-6d8f9b-xyz)
       - source_labels: [__meta_kubernetes_pod_name]
         target_label: pod
+
+      # Tạo label 'container' chứa tên container trong pod
       - source_labels: [__meta_kubernetes_pod_container_name]
         target_label: container
+
+      # Tạo label 'app' từ label K8s 'app' của pod (dùng để nhóm log theo service)
       - source_labels: [__meta_kubernetes_pod_label_app]
         target_label: app
+
+      # Xây dựng đường dẫn đến file log thực tế trên node theo chuẩn K8s:
+      # /var/log/pods/<pod-uid>/<container-name>/*.log
       - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
         separator: /
         target_label: __path__

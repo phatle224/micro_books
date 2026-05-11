@@ -1,23 +1,28 @@
 receivers:
   otlp:
     protocols:
+      # Nhận telemetry OTLP qua gRPC từ application SDK/exporter.
       grpc:
         endpoint: 0.0.0.0:4317
+      # Nhận telemetry OTLP qua HTTP.
       http:
         endpoint: 0.0.0.0:4318
 
 processors:
   batch:
+    # Gom nhiều telemetry item trước khi export để giảm overhead mạng.
     timeout: 5s
     send_batch_size: 1024
   memory_limiter:
+    # Chặn collector dùng quá nhiều RAM và làm Pod bị OOMKilled.
     check_interval: 1s
     limit_percentage: 80
     spike_limit_percentage: 25
   resourcedetection:
+    # Tự bổ sung metadata môi trường/chạy máy vào resource attributes.
     detectors: [env, system]
     timeout: 2s
-  # Force service_name label for Prometheus
+  # Đồng bộ resource attribute service.name sang label service_name để metric dễ query trên Prometheus/Grafana.
   attributes:
     actions:
       - key: service_name
@@ -26,23 +31,29 @@ processors:
 
 exporters:
   otlp/tempo:
+    # Export trace sang Tempo qua OTLP gRPC nội bộ.
     endpoint: tempo:4317
     tls:
       insecure: true
   prometheus:
+    # Mở endpoint Prometheus scrape để Prometheus kéo metric từ collector.
     endpoint: 0.0.0.0:8889
     resource_to_telemetry_conversion:
+      # Chuyển resource attributes thành labels metric khi phù hợp.
       enabled: true
   logging:
+    # Ghi telemetry ra stdout để debug pipeline.
     verbosity: basic
 
 service:
   pipelines:
     traces:
+      # Trace: nhận OTLP, thêm metadata/batch, rồi đẩy sang Tempo.
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, attributes, batch]
       exporters: [otlp/tempo, logging]
     metrics:
+      # Metric: nhận OTLP, xử lý tương tự, rồi expose ở exporter Prometheus.
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, attributes, batch]
       exporters: [prometheus, logging]

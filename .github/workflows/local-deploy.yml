@@ -1,5 +1,11 @@
 name: Local Deployment (CD)
 
+# Workflow này chịu trách nhiệm triển khai (CD) ứng dụng lên máy local.
+# Nó chạy trên self-hosted runner (máy Windows của bạn) — không tốn phút GitHub Actions.
+#
+# Có 2 cách kích hoạt:
+#   1. Tự động: khi workflow CI/CD chính hoàn thành thành công trên nhánh main.
+#   2. Thủ công: nhấn "Run workflow" trên tab Actions để deploy lại bất cứ lúc nào.
 on:
   workflow_run:
     workflows: ["Quy trình CI/CD cho Microbooks"]
@@ -9,21 +15,32 @@ on:
   workflow_dispatch: # Vẫn giữ để bạn có thể chạy tay nếu muốn
 
 env:
-  # Chỉnh sửa ở đây: 'docker', 'k8s', hoặc 'both'
+  # Mục tiêu triển khai — thay đổi giá trị này để chuyển chế độ deploy:
+  #   'docker'  → chỉ dùng Docker Compose
+  #   'k8s'     → chỉ dùng Kubernetes
+  #   'both'    → chạy cả hai
   DEPLOY_TARGET: 'k8s'
 
 jobs:
+  # ============================================================
+  # JOB: TRIỂN KHAI
+  # Chạy trên self-hosted runner (máy Windows local).
+  # Điều kiện: chỉ chạy khi được kích hoạt thủ công, HOẶC khi
+  # workflow CI/CD cha kết thúc với kết quả 'success'.
+  # ============================================================
   deploy:
     name: Triển khai trực tiếp trên máy local
     # Chỉnh sửa nhãn Runner ở đây (ví dụ: 'self-hosted', 'windows', v.v.)
-    runs-on: self-hosted 
+    runs-on: self-hosted
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    
+
     steps:
       - name: Tải mã nguồn mới nhất
         uses: actions/checkout@v4
 
       - name: Khôi phục file .env
+        # File .env chứa thông tin nhạy cảm (credentials, URI...) nên không được commit lên Git.
+        # Bước này copy file .env từ vị trí cố định trên máy local vào workspace của runner.
         shell: powershell
         run: |
           $src = "C:\Users\ADMIN\Desktop\micro_books\.env"
@@ -37,27 +54,35 @@ jobs:
           }
 
       - name: Đăng nhập vào Docker Hub
+        # Cần đăng nhập để pull các image mới nhất đã được push bởi job CI/CD
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Cập nhật và Khởi động lại các Service (Docker Compose)
+        # Chỉ chạy khi DEPLOY_TARGET là 'docker' hoặc 'both'
         if: ${{ env.DEPLOY_TARGET == 'docker' || env.DEPLOY_TARGET == 'both' }}
         run: |
+          # Pull image :latest mới nhất từ Docker Hub về máy local
           docker-compose pull
+          # Khởi động lại các container với image mới (--detach: chạy ngầm)
           docker-compose up -d
-        
+
       - name: Triển khai lên Kubernetes (K8s)
+        # Chỉ chạy khi DEPLOY_TARGET là 'k8s' hoặc 'both'
         if: ${{ env.DEPLOY_TARGET == 'k8s' || env.DEPLOY_TARGET == 'both' }}
         shell: powershell
         run: |
+          # Áp dụng toàn bộ manifest trong k8s/base (ConfigMap, Deployment, Service...)
           kubectl apply -k k8s/base
+          # Rollout restart buộc K8s pull image :latest mới dù tag không đổi
           kubectl rollout restart deployment frontend -n microbooks
           kubectl rollout restart deployment order-service -n microbooks
           kubectl rollout restart deployment inventory-service -n microbooks
 
       - name: Kiểm tra trạng thái hệ thống
+        # Hiển thị nhanh trạng thái container và pod sau khi deploy để xác nhận mọi thứ hoạt động
         run: |
           docker ps
           kubectl get pods -n microbooks

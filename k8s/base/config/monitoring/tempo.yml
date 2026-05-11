@@ -1,10 +1,12 @@
 server:
+  # Cổng HTTP API/UI nội bộ của Tempo.
   http_listen_port: 3200
 
 distributor:
   receivers:
     otlp:
       protocols:
+        # Nhận trace OTLP qua gRPC/HTTP từ OTEL Collector hoặc app nếu cần.
         grpc:
         http:
 
@@ -12,37 +14,49 @@ ingester:
   lifecycler:
     ring:
       kvstore:
+        # Single-node setup nên dùng inmemory ring thay vì Consul/Etcd/memberlist.
         store: inmemory
       replication_factor: 1
+  # Trace block được đóng khi idle 10s để sớm flush xuống storage.
   trace_idle_period: 10s
+  # Kích thước block tối đa trước khi flush.
   max_block_bytes: 1000000
+  # Thời gian tối đa giữ block mở trong memory.
   max_block_duration: 5m
 
 compactor:
   compaction:
+    # Giữ trace local trong 24 giờ trước khi bị dọn.
     block_retention: 24h
 
 metrics_generator:
   registry:
     external_labels:
+      # Gắn nhãn nguồn metrics để dễ phân biệt khi remote_write.
       source: tempo
   storage:
+    # WAL cho metrics generator để chống mất dữ liệu khi restart ngắn.
     path: /var/tempo/generator/wal
     remote_write:
+      # Đẩy span metrics/service graph vào Prometheus qua remote_write API.
       - url: http://prometheus:9090/api/v1/write
         send_exemplars: true
 
 storage:
   trace:
+    # Dùng local filesystem backend, phù hợp môi trường demo/dev.
     backend: local
     local:
       path: /var/tempo/traces
     wal:
+      # WAL giúp Tempo recover trace chưa flush sau restart/crash.
       path: /var/tempo/wal
 
 overrides:
   defaults:
     ingestion:
+      # Giới hạn trace ingest mặc định cho mỗi tenant/user.
       max_traces_per_user: 10000
     metrics_generator:
+      # Bật sinh service graph và span metrics từ trace.
       processors: [service-graphs, span-metrics]

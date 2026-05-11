@@ -79,3 +79,6 @@ docker-compose.override.yml
 *.sqlite3
 *.log
 data/
+
+# Documentation
+docs_markdown/

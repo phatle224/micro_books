@@ -1,3 +1,23 @@
+# ============================================================
+# Monitoring Stack — OTel Collector, Prometheus, Grafana,
+#                    Loki, Promtail, Tempo
+#
+# Toàn bộ hạ tầng observability được định nghĩa trong file này.
+# Kiến trúc luồng dữ liệu:
+#
+#   [Services] --OTLP--> [OTel Collector] --traces--> [Tempo]
+#                                          --metrics-> [Prometheus] ---> [Grafana]
+#   [Pod logs] --read--- [Promtail] -----> [Loki] -----------------> [Grafana]
+#
+# Cấu hình chi tiết của từng component nằm trong ConfigMap
+# "monitoring-configs" (k8s/base/config/monitoring/).
+# ============================================================
+
+# ============================================================
+# OPENTELEMETRY COLLECTOR — Trạm trung chuyển telemetry
+# Nhận traces và metrics từ microservice, xử lý và phân phối
+# đến Tempo (traces) và Prometheus (metrics).
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,16 +35,16 @@ spec:
     spec:
       containers:
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:0.100.0
-        args: ["--config=/etc/otelcol-contrib/config.yml"]
+        image: otel/opentelemetry-collector-contrib:0.100.0  # Bản "contrib" có thêm nhiều receiver/exporter
+        args: ["--config=/etc/otelcol-contrib/config.yml"]  # Trỏ đến file config được mount từ ConfigMap
         ports:
-        - containerPort: 4317
-        - containerPort: 4318
-        - containerPort: 8889
+        - containerPort: 4317  # OTLP gRPC — microservice gửi telemetry vào đây
+        - containerPort: 4318  # OTLP HTTP — alternative cho gRPC
+        - containerPort: 8889  # Prometheus metrics endpoint — Prometheus scrape từ đây
         volumeMounts:
         - name: otel-config
           mountPath: /etc/otelcol-contrib/config.yml
-          subPath: otel-collector-config.yaml
+          subPath: otel-collector-config.yaml  # Lấy đúng key từ ConfigMap
         resources:
           requests:
             cpu: "100m"
@@ -35,7 +55,7 @@ spec:
       volumes:
       - name: otel-config
         configMap:
-          name: monitoring-configs
+          name: monitoring-configs  # ConfigMap chứa cấu hình của tất cả monitoring components
 ---
 apiVersion: v1
 kind: Service
@@ -48,14 +68,21 @@ spec:
   ports:
   - name: otlp-grpc
     port: 4317
-    targetPort: 4317
+    targetPort: 4317  # Microservice gửi OTLP qua gRPC vào đây
   - name: otlp-http
     port: 4318
-    targetPort: 4318
+    targetPort: 4318  # Microservice gửi OTLP qua HTTP vào đây
   - name: metrics
     port: 8889
-    targetPort: 8889
+    targetPort: 8889  # Prometheus scrape metrics từ đây
+  # type mặc định ClusterIP — chỉ cần truy cập nội bộ
+
 ---
+# ============================================================
+# PROMETHEUS — Thu thập và lưu trữ Metrics
+# Pull metrics từ OTel Collector, kube-state-metrics, và
+# các component monitoring khác theo cấu hình prometheus.yml.
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -71,12 +98,13 @@ spec:
       labels:
         app: prometheus
     spec:
-      serviceAccountName: prometheus
+      serviceAccountName: prometheus  # Cần quyền đọc K8s API — xem prometheus-rbac.yaml
       containers:
       - name: prometheus
         image: prom/prometheus:v2.53.0
         args:
           - "--config.file=/etc/prometheus/prometheus.yml"
+          # Bật remote write receiver: cho phép Tempo gửi metrics (RED metrics từ traces) vào Prometheus
           - "--web.enable-remote-write-receiver"
         ports:
         - containerPort: 9090
@@ -107,8 +135,14 @@ spec:
   ports:
   - port: 9090
     targetPort: 9090
-  type: LoadBalancer
+  type: LoadBalancer  # Expose ra ngoài để truy cập Prometheus UI trực tiếp khi cần debug
+
 ---
+# ============================================================
+# GRAFANA — Dashboard và Visualisation
+# Đọc dữ liệu từ Prometheus, Loki, Tempo và hiển thị trong
+# các dashboard được provisioning tự động khi khởi động.
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -130,17 +164,21 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        # Tài khoản admin mặc định — đổi thành Secret trong môi trường production
         - name: GF_SECURITY_ADMIN_USER
           value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: "admin"
         volumeMounts:
+        # Mount file cấu hình datasources (Prometheus, Loki, Tempo) vào thư mục provisioning
         - name: grafana-provisioning-datasources
           mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
           subPath: datasources.yaml
+        # Mount file cấu hình dashboard provider — cho Grafana biết tìm dashboard ở đâu
         - name: grafana-provisioning-dashboards
           mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
           subPath: dashboards.yaml
+        # Mount file dashboard JSON — tự động import dashboard khi Grafana khởi động
         - name: grafana-dashboards
           mountPath: /var/lib/grafana/dashboards/microservices-dashboard.json
           subPath: microservices-dashboard.json
@@ -152,6 +190,7 @@ spec:
             cpu: "500m"
             memory: "512Mi"
       volumes:
+      # Tất cả 3 volume đều lấy từ cùng 1 ConfigMap — mỗi subPath trỏ đến key khác nhau
       - name: grafana-provisioning-datasources
         configMap:
           name: monitoring-configs
@@ -171,10 +210,15 @@ spec:
   selector:
     app: grafana
   ports:
-  - port: 3005
-    targetPort: 3000
+  - port: 3005        # Expose ra ngoài trên cổng 3005 để tránh trùng với Frontend (3000)
+    targetPort: 3000  # Grafana vẫn chạy trên 3000 bên trong container
   type: LoadBalancer
+
 ---
+# ============================================================
+# LOKI — Log Aggregation Backend
+# Nhận log từ Promtail, lưu trữ và cung cấp API query cho Grafana.
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -195,7 +239,7 @@ spec:
         image: grafana/loki:3.1.0
         args: ["-config.file=/etc/loki/loki-config.yaml"]
         ports:
-        - containerPort: 3100
+        - containerPort: 3100  # HTTP API: Promtail push log vào, Grafana query ra
         volumeMounts:
         - name: loki-config
           mountPath: /etc/loki/loki-config.yaml
@@ -223,7 +267,14 @@ spec:
   ports:
   - port: 3100
     targetPort: 3100
+  # type mặc định ClusterIP — Promtail và Grafana kết nối nội bộ
+
 ---
+# ============================================================
+# PROMTAIL — Log Collector
+# Đọc log từ /var/log/pods/ trên node, gắn K8s labels, đẩy lên Loki.
+# runAsUser: 0 (root) cần thiết để đọc file log của các container khác.
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -239,9 +290,9 @@ spec:
       labels:
         app: promtail
     spec:
-      serviceAccountName: promtail # Cần quyền để đọc Pod log
+      serviceAccountName: promtail  # Cần quyền đọc K8s API để service discovery — xem promtail-rbac.yaml
       securityContext:
-        runAsUser: 0
+        runAsUser: 0  # Chạy với quyền root để đọc được file log của container khác trên node
       containers:
       - name: promtail
         image: grafana/promtail:3.1.0
@@ -250,11 +301,13 @@ spec:
         - name: promtail-config
           mountPath: /etc/promtail/promtail-config.yml
           subPath: promtail-config.yaml
+        # Mount thư mục log của node vào container — đọc log của tất cả pod trên node
         - name: varlog
           mountPath: /var/log
+        # Mount thư mục Docker containers — cần để parse metadata container (image, labels)
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
-          readOnly: true
+          readOnly: true  # Chỉ cần đọc, không ghi
         resources:
           requests:
             cpu: "50m"
@@ -266,13 +319,21 @@ spec:
       - name: promtail-config
         configMap:
           name: monitoring-configs
+      # hostPath: mount trực tiếp thư mục từ node (host) vào pod
       - name: varlog
         hostPath:
-          path: /var/log
+          path: /var/log                      # Thư mục log hệ thống và K8s trên node
       - name: varlibdockercontainers
         hostPath:
-          path: /var/lib/docker/containers
+          path: /var/lib/docker/containers    # Metadata và log của Docker containers trên node
+
 ---
+# ============================================================
+# TEMPO — Distributed Tracing Backend
+# Nhận traces từ OTel Collector qua OTLP, lưu trữ và cung cấp
+# API TraceQL cho Grafana. Cũng tự sinh RED metrics và gửi
+# ngược vào Prometheus qua remote_write.
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -293,9 +354,9 @@ spec:
         image: grafana/tempo:2.5.0
         args: ["-config.file=/etc/tempo/tempo.yaml"]
         ports:
-        - containerPort: 3200
-        - containerPort: 4317
-        - containerPort: 4318
+        - containerPort: 3200  # HTTP API — Grafana query traces từ đây
+        - containerPort: 4317  # OTLP gRPC — OTel Collector gửi traces vào đây
+        - containerPort: 4318  # OTLP HTTP — alternative cho gRPC
         volumeMounts:
         - name: tempo-config
           mountPath: /etc/tempo/tempo.yaml
@@ -323,10 +384,11 @@ spec:
   ports:
   - name: http
     port: 3200
-    targetPort: 3200
+    targetPort: 3200  # Grafana và Prometheus (remote_write) kết nối vào đây
   - name: otlp-grpc
     port: 4317
-    targetPort: 4317
+    targetPort: 4317  # OTel Collector gửi traces vào đây
   - name: otlp-http
     port: 4318
     targetPort: 4318
+  # type mặc định ClusterIP — chỉ cần truy cập nội bộ

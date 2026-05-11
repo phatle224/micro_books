@@ -1,10 +1,19 @@
+# ============================================================
+# Order Service — Deployment + Service
+#
+# Xử lý toàn bộ luồng đặt hàng: nhận request từ Frontend,
+# xác thực JWT, kiểm tra tồn kho qua Inventory Service,
+# lưu đơn hàng vào MongoDB, và publish sự kiện lên Kafka.
+# Kết nối: MongoDB (lưu trữ) + Kafka (publish sự kiện) + Inventory Service (HTTP)
+# ============================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-service
   namespace: microbooks
 spec:
-  replicas: 1
+  replicas: 1  # Khởi động với 1 pod; HPA sẽ tự scale nếu được cấu hình
   selector:
     matchLabels:
       app: order-service
@@ -18,18 +27,30 @@ spec:
         image: kietne1211/microbooks-order-service:latest
         ports:
         - containerPort: 3001
+
+        # --- Liveness Probe ---
+        # Dùng endpoint /health — kiểm tra service còn hoạt động không.
+        # Thất bại 3 lần liên tiếp (mặc định) → K8s restart container (Auto Healing).
         livenessProbe:
           httpGet:
             path: /health
             port: 3001
           initialDelaySeconds: 10
           periodSeconds: 10
+
+        # --- Readiness Probe ---
+        # Tần suất kiểm tra 5s — pod chỉ nhận traffic khi probe trả về 200.
+        # Khi deploy version mới, pod cũ vẫn phục vụ trong khi pod mới chờ readiness.
         readinessProbe:
           httpGet:
             path: /health
             port: 3001
           initialDelaySeconds: 5
           periodSeconds: 5
+
+        # --- Resource Limits & Requests ---
+        # Order Service xử lý nhiều logic nghiệp vụ hơn Inventory nhưng vẫn I/O-bound.
+        # CPU request 100m phù hợp cho trạng thái idle, limit 500m đủ cho spike.
         resources:
           limits:
             cpu: "500m"
@@ -37,39 +58,62 @@ spec:
           requests:
             cpu: "100m"
             memory: "128Mi"
+
         env:
+        # Credentials MongoDB — lấy từ Secret (mã hoá), không để trong ConfigMap hay code
         - name: MONGO_URI
           valueFrom:
             secretKeyRef:
               name: microbooks-secrets
               key: MONGO_URI
+
+        # Khoá bí mật để ký và xác thực JWT token — bắt buộc phải là Secret
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: microbooks-secrets
               key: JWT_SECRET
+
+        # Địa chỉ Kafka broker để publish sự kiện đặt hàng
         - name: KAFKA_BROKER
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: KAFKA_BROKER
+
+        # URL để Order Service gọi sang Inventory Service kiểm tra/cập nhật tồn kho
         - name: INVENTORY_SERVICE_URL
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: INVENTORY_SERVICE_URL
+
+        # Cổng service lắng nghe — truyền qua env để app đọc thay vì hardcode trong code
         - name: SERVICE_PORT
           value: "3001"
+
+        # --- OpenTelemetry Configuration ---
+        # Bật OpenTelemetry để tự động instrument HTTP request và Kafka producer
         - name: OTEL_ENABLED
           value: "true"
+
+        # Tên service hiển thị trong Grafana Tempo và Prometheus (label service_name)
         - name: OTEL_SERVICE_NAME
           value: "order-service"
+
+        # Endpoint của OTel Collector nhận dữ liệu qua gRPC (cổng 4317)
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           valueFrom:
             configMapKeyRef:
               name: microbooks-config
               key: OTEL_EXPORTER_OTLP_ENDPOINT
+
 ---
+# ============================================================
+# Service — Expose Order Service
+# type: LoadBalancer để Frontend có thể gọi HTTP từ bên ngoài cluster.
+# Trong production nên dùng ClusterIP + Ingress với TLS termination.
+# ============================================================
 apiVersion: v1
 kind: Service
 metadata:

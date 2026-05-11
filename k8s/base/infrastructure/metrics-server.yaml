@@ -1,9 +1,28 @@
+# ============================================================
+# Metrics Server — CPU/RAM thực tế của Pod và Node
+#
+# Metrics Server thu thập số liệu tài nguyên thực tế từ kubelet
+# trên mỗi node, cung cấp cho:
+#   - HPA (Horizontal Pod Autoscaler): quyết định scale up/down
+#   - kubectl top pods / kubectl top nodes: xem tài nguyên
+#
+# Khác biệt với kube-state-metrics:
+#   Metrics Server     → CPU/RAM đang dùng THỰC TẾ (real-time, short-lived)
+#   kube-state-metrics → Trạng thái K8s objects (persistent, cho monitoring)
+#
+# Lưu ý: Metrics Server KHÔNG lưu lịch sử — chỉ giữ giá trị hiện tại.
+# Để xem lịch sử dài hạn, dùng Prometheus.
+# ============================================================
+
+# ServiceAccount trong namespace kube-system — Metrics Server là thành phần hệ thống
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: metrics-server
   namespace: kube-system
 ---
+# ClusterRole cho phép các admin/editor/viewer đọc metrics qua API metrics.k8s.io
+# Label aggregate-to-* tự động gộp quyền này vào các ClusterRole có sẵn của K8s
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -19,6 +38,7 @@ rules:
       - nodes
     verbs: ["get", "list", "watch"]
 ---
+# ClusterRole chính cho Metrics Server — quyền đọc metrics từ kubelet
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -26,7 +46,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources:
-      - nodes/metrics
+      - nodes/metrics  # Endpoint kubelet cung cấp CPU/RAM của từng container
     verbs: ["get"]
   - apiGroups: [""]
     resources:
@@ -36,6 +56,8 @@ rules:
       - configmaps
     verbs: ["get", "list", "watch"]
 ---
+# RoleBinding cho phép Metrics Server đọc extension-apiserver-authentication
+# ConfigMap trong kube-system — cần để xác thực API calls
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -50,6 +72,8 @@ subjects:
     name: metrics-server
     namespace: kube-system
 ---
+# Cho phép Metrics Server uỷ quyền xác thực sang API server chính
+# Cần thiết vì Metrics Server đăng ký như một extension API server
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -63,6 +87,7 @@ subjects:
     name: metrics-server
     namespace: kube-system
 ---
+# Gắn ClusterRole system:metrics-server vào ServiceAccount
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -76,6 +101,7 @@ subjects:
     name: metrics-server
     namespace: kube-system
 ---
+# Service nội bộ — API server K8s gọi đến đây để lấy metrics
 apiVersion: v1
 kind: Service
 metadata:
@@ -86,9 +112,12 @@ spec:
     app: metrics-server
   ports:
     - name: https
-      port: 443
+      port: 443         # HTTPS vì Metrics Server yêu cầu TLS với API server
       targetPort: https
 ---
+# ============================================================
+# Deployment — chạy Metrics Server pod
+# ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -106,30 +135,31 @@ spec:
         app: metrics-server
     spec:
       serviceAccountName: metrics-server
+      # system-cluster-critical: K8s ưu tiên giữ pod này alive ngay cả khi node đang bị áp lực tài nguyên
       priorityClassName: system-cluster-critical
       containers:
         - name: metrics-server
           image: registry.k8s.io/metrics-server/metrics-server:v0.7.2
           args:
-            - --cert-dir=/tmp
-            - --secure-port=10250
-            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
-            - --kubelet-use-node-status-port
-            - --metric-resolution=15s
-            - --kubelet-insecure-tls
+            - --cert-dir=/tmp                                          # Lưu TLS cert tạm thời vào /tmp
+            - --secure-port=10250                                      # Cổng HTTPS lắng nghe
+            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname  # Thứ tự ưu tiên kết nối kubelet
+            - --kubelet-use-node-status-port                           # Dùng port từ Node status thay vì hardcode
+            - --metric-resolution=15s                                  # Thu thập metrics mỗi 15 giây
+            - --kubelet-insecure-tls                                   # Bỏ qua verify TLS cert của kubelet — cần thiết cho môi trường local/dev
           ports:
             - containerPort: 10250
               name: https
           livenessProbe:
             httpGet:
-              path: /livez
+              path: /livez   # Endpoint kiểm tra Metrics Server còn sống không
               port: https
               scheme: HTTPS
             initialDelaySeconds: 20
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /readyz
+              path: /readyz  # Endpoint kiểm tra Metrics Server đã sẵn sàng phục vụ chưa
               port: https
               scheme: HTTPS
             initialDelaySeconds: 20
@@ -142,6 +172,8 @@ spec:
               cpu: "250m"
               memory: "300Mi"
 ---
+# APIService đăng ký Metrics Server như một extension API server.
+# Sau khi apply, lệnh "kubectl top" và HPA có thể gọi API metrics.k8s.io/v1beta1.
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
@@ -152,6 +184,6 @@ spec:
     namespace: kube-system
   group: metrics.k8s.io
   version: v1beta1
-  insecureSkipTLSVerify: true
+  insecureSkipTLSVerify: true  # Bỏ qua TLS verify — chấp nhận được cho môi trường local
   groupPriorityMinimum: 100
   versionPriority: 100

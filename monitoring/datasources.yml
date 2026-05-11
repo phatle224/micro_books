@@ -1,19 +1,36 @@
+# Cấu hình Grafana Provisioning - Data Sources
+# File này được Grafana tự động đọc khi khởi động để đăng ký các nguồn dữ liệu.
+# Không cần thêm tay qua giao diện UI — mọi thay đổi ở đây sẽ có hiệu lực sau khi restart Grafana.
+#
+# Kiến trúc observability của dự án:
+#   Metrics → Prometheus  (số liệu hiệu suất: CPU, latency, request rate...)
+#   Logs    → Loki        (nhật ký từ các service và pod)
+#   Traces  → Tempo       (theo dõi luồng request xuyên suốt các microservice)
 apiVersion: 1
 
 datasources:
+  # ------------------------------------------------------------------
+  # PROMETHEUS — nguồn dữ liệu mặc định cho các dashboard metrics
+  # ------------------------------------------------------------------
   - name: Prometheus
     type: prometheus
-    uid: prometheus
-    access: proxy
+    uid: prometheus          # UID cố định để các dashboard JSON có thể tham chiếu trực tiếp
+    access: proxy            # Grafana server gọi Prometheus (không phải trình duyệt client)
     url: http://prometheus:9090
-    isDefault: true
+    isDefault: true          # Được chọn sẵn khi tạo panel mới trong Grafana
 
+  # ------------------------------------------------------------------
+  # LOKI — nguồn dữ liệu cho log aggregation
+  # ------------------------------------------------------------------
   - name: Loki
     type: loki
     uid: loki
     access: proxy
     url: http://loki:3100
 
+  # ------------------------------------------------------------------
+  # TEMPO — nguồn dữ liệu cho distributed tracing
+  # ------------------------------------------------------------------
   - name: Tempo
     type: tempo
     uid: tempo
@@ -22,13 +39,15 @@ datasources:
     jsonData:
       httpMethod: GET
       search:
-        hide: false
+        hide: false          # Hiển thị tab Search trên Explore để tìm kiếm trace
       nodeGraph:
-        enabled: true
+        enabled: true        # Bật sơ đồ node graph trực quan hóa luồng giữa các service
+      # Liên kết từ một span trong Tempo sang log tương ứng trong Loki
       tracesToLogsV2:
-        datasourceUid: loki
+        datasourceUid: loki  # Dùng Loki làm nguồn log khi drill-down từ trace
         filterByTraceID: true
         filterBySpanID: true
         customQuery: false
+      # Cho phép tìm kiếm trace theo service name trực tiếp từ Loki
       lokiSearch:
         datasourceUid: loki

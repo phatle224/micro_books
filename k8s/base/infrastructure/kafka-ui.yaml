@@ -1,3 +1,16 @@
+# ============================================================
+# Kafka UI — Giao diện quản lý Kafka trực quan
+#
+# Kafka UI (provectuslabs/kafka-ui) cung cấp web dashboard để:
+#   - Xem danh sách topic và message trong từng partition
+#   - Theo dõi consumer group và lag (độ trễ xử lý message)
+#   - Publish message thủ công để test
+#   - Xem cấu hình broker
+#
+# Đây là công cụ phát triển/debug — không cần thiết trong production.
+# Truy cập: http://<LoadBalancer-IP>:8080
+# ============================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,12 +32,16 @@ spec:
         ports:
         - containerPort: 8080
         env:
+        # Tên hiển thị của cluster trong giao diện UI (có thể thêm nhiều cluster)
         - name: KAFKA_CLUSTERS_0_NAME
           value: "microbooks-cluster"
+        # Địa chỉ Kafka broker — dùng tên Service nội bộ K8s
         - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
           value: "kafka-service:9092"
+        # Địa chỉ Zookeeper — dùng để hiển thị thêm metadata cluster
         - name: KAFKA_CLUSTERS_0_ZOOKEEPER
           value: "zookeeper:2181"
+        # Cho phép thay đổi cấu hình cluster trực tiếp qua UI mà không cần restart pod
         - name: DYNAMIC_CONFIG_ENABLED
           value: "true"
         resources:
@@ -46,4 +63,4 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-  type: LoadBalancer
+  type: LoadBalancer  # Expose ra ngoài cluster để truy cập từ trình duyệt

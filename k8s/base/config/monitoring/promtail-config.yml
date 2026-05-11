@@ -1,11 +1,14 @@
 server:
+  # Cổng HTTP để health/debug; tắt gRPC vì không dùng remote control.
   http_listen_port: 9080
   grpc_listen_port: 0
 
 positions:
+  # File lưu offset đã đọc để Promtail không đọc lại log cũ sau restart.
   filename: /tmp/positions.yaml
 
 clients:
+  # Đẩy toàn bộ log đã parse sang Loki.
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
@@ -13,18 +16,24 @@ scrape_configs:
     static_configs:
       - targets: [localhost]
         labels:
+          # job label logic cho dòng log gửi sang Loki.
           job: kubernetes
+          # Đọc log file của Pod thuộc namespace microbooks trên node hiện tại.
           __path__: /var/log/pods/microbooks_*/*/*.log
     pipeline_stages:
+      # Parse log theo format Docker container runtime.
       - docker: {}
       - regex:
+          # Tách namespace/pod/container từ đường dẫn file log.
           source: filename
           expression: '/var/log/pods/(?P<namespace>[^_]+)_(?P<pod>.+)_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?P<container>[^/]+)/'
       - labels:
+          # Đưa metadata trích được thành labels để filter/query trên Loki.
           namespace:
           pod:
           container:
       - regex:
+          # Cố gắng bắt mức log ở đầu dòng nếu application ghi theo convention phổ biến.
           expression: '(?i)^(?P<level>ERROR|WARN|WARNING|INFO|DEBUG|CRITICAL)[:\s]'
       - labels:
           level:
