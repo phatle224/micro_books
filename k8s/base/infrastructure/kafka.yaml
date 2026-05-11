@@ -1,101 +1,101 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: zookeeper
-  namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: zookeeper
-  template:
-    metadata:
-      labels:
+apiVersion: apps/v1 # Phiên bản API quản lý vòng đời ứng dụng
+kind: Deployment # Triển khai cụm Zookeeper để hỗ trợ Kafka
+metadata: # Thông tin mô tả
+  name: zookeeper # Tên Deployment
+  namespace: microbooks # Triển khai trong namespace microbooks
+spec: # Cấu hình Deployment
+  replicas: 1 # Duy trì 1 bản sao Zookeeper
+  selector: # Cách chọn Pod
+    matchLabels: 
+      app: zookeeper # Nhãn định danh là zookeeper
+  template: # Mẫu Pod
+    metadata: 
+      labels: 
         app: zookeeper
-    spec:
-      containers:
-      - name: zookeeper
-        image: confluentinc/cp-zookeeper:7.5.0
-        ports:
-        - containerPort: 2181
-        env:
-        - name: ZOOKEEPER_CLIENT_PORT
+    spec: 
+      containers: # Danh sách container
+      - name: zookeeper # Tên container
+        image: confluentinc/cp-zookeeper:7.5.0 # Hình ảnh Zookeeper từ Confluent
+        ports: # Cổng mở trên container
+        - containerPort: 2181 # Cổng 2181 cho kết nối client
+        env: # Biến môi trường
+        - name: ZOOKEEPER_CLIENT_PORT # Cổng lắng nghe kết nối
           value: "2181"
-        - name: ZOOKEEPER_TICK_TIME
+        - name: ZOOKEEPER_TICK_TIME # Thời gian nhịp tim cơ bản
           value: "2000"
-        resources:
-          requests:
+        resources: # Giới hạn tài nguyên
+          requests: # Mức tài nguyên tối thiểu
             cpu: "100m"
             memory: "256Mi"
-          limits:
+          limits: # Mức tài nguyên tối đa
             cpu: "200m"
             memory: "512Mi"
 ---
-apiVersion: v1
-kind: Service
-metadata:
+apiVersion: v1 # Phiên bản API cơ bản
+kind: Service # Tạo Service cho Zookeeper để Kafka có thể gọi tới
+metadata: 
   name: zookeeper
   namespace: microbooks
-spec:
-  selector:
-    app: zookeeper
-  ports:
+spec: 
+  selector: 
+    app: zookeeper # Điều hướng tới Pod có nhãn app=zookeeper
+  ports: 
   - protocol: TCP
-    port: 2181
-    targetPort: 2181
+    port: 2181 # Cổng Service
+    targetPort: 2181 # Cổng container
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
+apiVersion: apps/v1 # Phiên bản API triển khai
+kind: Deployment # Triển khai cụm Kafka Message Broker
+metadata: 
   name: kafka
   namespace: microbooks
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: kafka
-  template:
-    metadata:
-      labels:
+spec: 
+  replicas: 1 # Chạy 1 broker Kafka
+  strategy: # Chiến lược triển khai
+    type: Recreate # Xóa Pod cũ trước khi tạo Pod mới để tránh xung đột dữ liệu
+  selector: 
+    matchLabels: 
+      app: kafka # Nhãn định danh là kafka
+  template: 
+    metadata: 
+      labels: 
         app: kafka
-    spec:
-      containers:
-      - name: kafka
-        image: confluentinc/cp-kafka:7.5.0
-        ports:
-        - containerPort: 9092
-        env:
-        - name: KAFKA_BROKER_ID
+    spec: 
+      containers: 
+      - name: kafka # Tên container broker
+        image: confluentinc/cp-kafka:7.5.0 # Hình ảnh Kafka broker
+        ports: 
+        - containerPort: 9092 # Cổng 9092 cho kết nối nội bộ/ngoại bộ
+        env: 
+        - name: KAFKA_BROKER_ID # Định danh broker
           value: "1"
-        - name: KAFKA_ZOOKEEPER_CONNECT
+        - name: KAFKA_ZOOKEEPER_CONNECT # Địa chỉ kết nối tới Zookeeper
           value: "zookeeper:2181"
-        - name: KAFKA_ADVERTISED_LISTENERS
+        - name: KAFKA_ADVERTISED_LISTENERS # Địa chỉ Kafka 'quảng bá' cho các app kết nối
           value: "PLAINTEXT://kafka-service:9092"
-        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR # Số bản sao lưu dữ liệu offset
           value: "1"
-        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE # Tự động tạo Topic khi có request
           value: "true"
-        - name: KAFKA_HEAP_OPTS
+        - name: KAFKA_HEAP_OPTS # Cấu hình bộ nhớ Java (JVM Heap)
           value: "-Xmx512m -Xms256m"
-        resources:
-          requests:
+        resources: # Kiểm soát tài nguyên CPU/RAM
+          requests: 
             cpu: "200m"
             memory: "512Mi"
-          limits:
+          limits: 
             cpu: "500m"
             memory: "1.5Gi"
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-service
+apiVersion: v1 # Phiên bản API Service
+kind: Service # Tạo điểm truy cập cố định cho Kafka
+metadata: 
+  name: kafka-service # Tên service cho các app gọi tới
   namespace: microbooks
-spec:
-  selector:
-    app: kafka
-  ports:
+spec: 
+  selector: 
+    app: kafka # Trỏ tới các Pod có nhãn app=kafka
+  ports: 
   - protocol: TCP
-    port: 9092
-    targetPort: 9092
+    port: 9092 # Cổng truy cập 9092
+    targetPort: 9092 # Cổng trên container

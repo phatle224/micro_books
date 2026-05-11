@@ -1,36 +1,36 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1 # Phiên bản API của Kustomize
+kind: Kustomization # Loại cấu hình Kustomization (dùng để quản lý và tùy biến các file YAML)
 
-resources:
-  - namespace.yaml
-  - config/secrets.yaml
-  - config/configmap.yaml
-  - infrastructure/kafka.yaml
-  - infrastructure/kafka-ui.yaml
-  - infrastructure/kube-state-metrics.yaml
-  - infrastructure/metrics-server.yaml
-  - infrastructure/promtail-rbac.yaml
-  - infrastructure/prometheus-rbac.yaml
-  - infrastructure/monitoring.yaml
-  - services/order-service.yaml
-  - services/inventory-service.yaml
-  - services/frontend.yaml
-  - config/hpa.yaml
-  - config/quotas.yaml
-  - ingress.yaml
+resources: # Danh sách các file tài nguyên Kubernetes sẽ được nạp vào
+  - namespace.yaml # Khởi tạo không gian tên
+  - config/secrets.yaml # Nạp các thông tin bí mật (mật khẩu, key)
+  - config/configmap.yaml # Nạp các tham số cấu hình chung
+  - infrastructure/kafka.yaml # Triển khai Message Broker Kafka
+  - infrastructure/kafka-ui.yaml # Giao diện quản lý Kafka
+  - infrastructure/kube-state-metrics.yaml # Thu thập thông số từ Kubernetes API
+  - infrastructure/metrics-server.yaml # Cung cấp metrics cho HPA (Auto-scaling)
+  - infrastructure/promtail-rbac.yaml # Phân quyền cho Promtail để đọc log container
+  - infrastructure/prometheus-rbac.yaml # Phân quyền cho Prometheus để quét metrics
+  - infrastructure/monitoring.yaml # Triển khai hệ thống giám sát (Prometheus, Grafana...)
+  - services/order-service.yaml # Triển khai dịch vụ Đơn hàng
+  - services/inventory-service.yaml # Triển khai dịch vụ Kho hàng
+  - services/frontend.yaml # Triển khai giao diện người dùng
+  - config/hpa.yaml # Cấu hình tự động tăng giảm số lượng Pod (Horizontal Pod Autoscaler)
+  - config/quotas.yaml # Giới hạn tài nguyên (CPU, RAM) cho Namespace
+  - ingress.yaml # Cấu hình điều hướng traffic từ bên ngoài
 
-configMapGenerator:
-  - name: monitoring-configs
-    namespace: microbooks
-    files:
-      - prometheus.yml=config/monitoring/prometheus.yml
-      - loki-config.yaml=config/monitoring/loki-config.yml
-      - tempo.yaml=config/monitoring/tempo.yml
-      - promtail-config.yaml=config/monitoring/promtail-config.yml
-      - otel-collector-config.yaml=config/monitoring/otel-collector-config.yml
-      - datasources.yaml=config/monitoring/datasources.yml
-      - dashboards.yaml=config/monitoring/dashboards.yml
-      - microservices-dashboard.json=config/monitoring/microbooks-dashboard.json
+configMapGenerator: # Tự động tạo ConfigMap từ các file cấu hình
+  - name: monitoring-configs # Tên của ConfigMap được tạo ra
+    namespace: microbooks # Đặt trong namespace microbooks
+    files: # Danh sách các file nguồn để đưa vào ConfigMap
+      - prometheus.yml=config/monitoring/prometheus.yml # Cấu hình Prometheus
+      - loki-config.yaml=config/monitoring/loki-config.yml # Cấu hình Loki (Logs)
+      - tempo.yaml=config/monitoring/tempo.yml # Cấu hình Tempo (Traces)
+      - promtail-config.yaml=config/monitoring/promtail-config.yml # Cấu hình Promtail
+      - otel-collector-config.yaml=config/monitoring/otel-collector-config.yml # Cấu hình Collector
+      - datasources.yaml=config/monitoring/datasources.yml # Cấu hình nguồn dữ liệu cho Grafana
+      - dashboards.yaml=config/monitoring/dashboards.yml # Cấu hình nạp dashboard tự động
+      - microservices-dashboard.json=config/monitoring/microbooks-dashboard.json # File JSON chứa biểu đồ Dashboard
 
-generatorOptions:
-  disableNameSuffixHash: true
+generatorOptions: # Các tùy chỉnh bổ sung cho bộ tạo (generator)
+  disableNameSuffixHash: true # Tắt việc thêm mã hash vào đuôi tên ConfigMap (để giữ tên cố định)

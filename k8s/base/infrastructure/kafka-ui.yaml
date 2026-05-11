@@ -1,49 +1,49 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kafka-ui
-  namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: kafka-ui
-  template:
-    metadata:
-      labels:
+apiVersion: apps/v1 # Phiên bản API quản lý vòng đời ứng dụng
+kind: Deployment # Loại tài nguyên là Deployment để quản lý giao diện Kafka UI
+metadata: # Thông tin mô tả
+  name: kafka-ui # Tên Deployment
+  namespace: microbooks # Triển khai trong namespace microbooks
+spec: # Cấu hình hoạt động
+  replicas: 1 # Chạy 1 bản sao giao diện quản lý
+  selector: # Chọn Pod theo nhãn
+    matchLabels: 
+      app: kafka-ui # Nhãn định danh là kafka-ui
+  template: # Mẫu Pod cho Kafka UI
+    metadata: 
+      labels: 
         app: kafka-ui
-    spec:
-      containers:
-      - name: kafka-ui
-        image: provectuslabs/kafka-ui:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: KAFKA_CLUSTERS_0_NAME
+    spec: 
+      containers: 
+      - name: kafka-ui # Tên container
+        image: provectuslabs/kafka-ui:latest # Hình ảnh Kafka UI bản mới nhất
+        ports: 
+        - containerPort: 8080 # Cổng giao diện web bên trong container
+        env: # Danh sách các biến môi trường cấu hình kết nối tới Kafka
+        - name: KAFKA_CLUSTERS_0_NAME # Tên cụm Kafka hiển thị trên UI
           value: "microbooks-cluster"
-        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS # Địa chỉ server Kafka để lấy thông tin
           value: "kafka-service:9092"
-        - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+        - name: KAFKA_CLUSTERS_0_ZOOKEEPER # Địa chỉ Zookeeper đi kèm
           value: "zookeeper:2181"
-        - name: DYNAMIC_CONFIG_ENABLED
+        - name: DYNAMIC_CONFIG_ENABLED # Cho phép cấu hình động trực tiếp trên giao diện
           value: "true"
-        resources:
-          requests:
+        resources: # Kiểm soát tài nguyên CPU/RAM
+          requests: # Mức yêu cầu tối thiểu
             cpu: "100m"
             memory: "128Mi"
-          limits:
+          limits: # Mức giới hạn tối đa
             cpu: "200m"
             memory: "256Mi"
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-ui
+apiVersion: v1 # Phiên bản API cơ bản
+kind: Service # Tạo điểm truy cập mạng cho Kafka UI
+metadata: 
+  name: kafka-ui # Tên service
   namespace: microbooks
-spec:
-  selector:
-    app: kafka-ui
-  ports:
-  - port: 8080
-    targetPort: 8080
-  type: LoadBalancer
+spec: 
+  selector: 
+    app: kafka-ui # Điều hướng traffic tới các Pod có nhãn app=kafka-ui
+  ports: 
+  - port: 8080 # Cổng truy cập của Service
+    targetPort: 8080 # Cổng thực tế trên container
+  type: LoadBalancer # Cấp IP công khai để người dùng truy cập từ trình duyệt

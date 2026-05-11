@@ -39,11 +39,13 @@ class UserCreate(BaseModel):
     name: str
     email: str
     password: str
+    captcha_token: str
 
 
 class UserLogin(BaseModel):
     email: str
     password: str
+    captcha_token: str
 
 
 class UserPublic(BaseModel):

@@ -1,85 +1,85 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order-service
-  namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: order-service
-  template:
-    metadata:
-      labels:
-        app: order-service
-    spec:
-      containers:
-      - name: order-service
-        image: kietne1211/microbooks-order-service:latest
-        ports:
-        - containerPort: 3001
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-        env:
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
+apiVersion: apps/v1 # Phiên bản API quản lý vòng đời ứng dụng
+kind: Deployment # Quản lý triển khai các Pod ứng dụng đơn hàng
+metadata: # Thông tin mô tả đối tượng
+  name: order-service # Tên của dịch vụ Deployment
+  namespace: microbooks # Triển khai trong không gian tên microbooks
+spec: # Cấu hình hoạt động của Deployment
+  replicas: 1 # Chạy duy nhất 1 bản sao Pod
+  selector: # Cách thức Deployment nhận diện Pod của nó
+    matchLabels: # Dựa trên các nhãn định danh
+      app: order-service # Nhãn định danh là app=order-service
+  template: # Mẫu định nghĩa cho Pod mới
+    metadata: # Thông tin mô tả cho Pod
+      labels: # Gán nhãn cho các Pod được tạo ra
+        app: order-service # Nhãn app=order-service
+    spec: # Cấu hình kỹ thuật bên trong Pod
+      containers: # Danh sách container chạy trong Pod này
+      - name: order-service # Tên container dịch vụ đơn hàng
+        image: kietne1211/microbooks-order-service:latest # Hình ảnh container từ Docker Hub
+        ports: # Cổng giao tiếp của container
+        - containerPort: 3001 # Ứng dụng lắng nghe trên cổng 3001
+        livenessProbe: # Kiểm tra xem container còn hoạt động tốt không
+          httpGet: # Gửi yêu cầu HTTP GET để kiểm tra
+            path: /health # Đường dẫn kiểm tra sức khỏe
+            port: 3001 # Cổng dịch vụ
+          initialDelaySeconds: 10 # Đợi 10 giây sau khi start mới bắt đầu check
+          periodSeconds: 10 # Lặp lại kiểm tra sau mỗi 10 giây
+        readinessProbe: # Kiểm tra xem app đã sẵn sàng phục vụ khách hàng chưa
+          httpGet: # Gửi yêu cầu HTTP GET
+            path: /health # Đường dẫn kiểm tra sự sẵn sàng
+            port: 3001 # Cổng dịch vụ
+          initialDelaySeconds: 5 # Đợi 5 giây sau khi start mới check lần đầu
+          periodSeconds: 5 # Kiểm tra mỗi 5 giây
+        resources: # Kiểm soát tài nguyên máy chủ
+          limits: # Giới hạn tối đa tài nguyên có thể dùng
+            cpu: "500m" # Tối đa 0.5 CPU
+            memory: "256Mi" # Tối đa 256MB RAM
+          requests: # Mức tài nguyên tối thiểu cần để chạy
+            cpu: "100m" # Yêu cầu tối thiểu 0.1 CPU
+            memory: "128Mi" # Yêu cầu tối thiểu 128MB RAM
+        env: # Danh sách biến môi trường cấu hình cho ứng dụng
+        - name: MONGO_URI # Địa chỉ kết nối cơ sở dữ liệu MongoDB
+          valueFrom: # Lấy từ Secret bảo mật
+            secretKeyRef: 
               name: microbooks-secrets
               key: MONGO_URI
-        - name: JWT_SECRET
-          valueFrom:
+        - name: JWT_SECRET # Khóa bí mật dùng cho xác thực Token
+          valueFrom: # Lấy từ Secret bảo mật
             secretKeyRef:
               name: microbooks-secrets
               key: JWT_SECRET
-        - name: KAFKA_BROKER
-          valueFrom:
+        - name: KAFKA_BROKER # Địa chỉ Broker Kafka để giao tiếp sự kiện
+          valueFrom: # Lấy từ cấu hình chung ConfigMap
             configMapKeyRef:
               name: microbooks-config
               key: KAFKA_BROKER
-        - name: INVENTORY_SERVICE_URL
-          valueFrom:
+        - name: INVENTORY_SERVICE_URL # URL để gọi API sang dịch vụ kho
+          valueFrom: # Lấy từ ConfigMap
             configMapKeyRef:
               name: microbooks-config
               key: INVENTORY_SERVICE_URL
-        - name: SERVICE_PORT
+        - name: SERVICE_PORT # Cổng nội bộ của dịch vụ
           value: "3001"
-        - name: OTEL_ENABLED
+        - name: OTEL_ENABLED # Kích hoạt giám sát OpenTelemetry
           value: "true"
-        - name: OTEL_SERVICE_NAME
+        - name: OTEL_SERVICE_NAME # Tên hiển thị dịch vụ trên Dashboard giám sát
           value: "order-service"
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          valueFrom:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT # Địa chỉ trung tâm thu thập dữ liệu giám sát
+          valueFrom: # Lấy từ ConfigMap chung
             configMapKeyRef:
               name: microbooks-config
               key: OTEL_EXPORTER_OTLP_ENDPOINT
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: order-service
-  namespace: microbooks
-spec:
-  selector:
-    app: order-service
-  ports:
-  - protocol: TCP
-    port: 3001
-    targetPort: 3001
-  type: LoadBalancer
+apiVersion: v1 # Phiên bản API tài nguyên cơ bản
+kind: Service # Tạo dịch vụ mạng để truy cập các Pod
+metadata: # Thông tin mô tả
+  name: order-service # Tên Service cho việc gọi nội bộ giữa các microservices
+  namespace: microbooks # Đặt trong namespace microbooks
+spec: # Cấu hình mạng của Service
+  selector: # Chỉ định các Pod mà Service này đại diện
+    app: order-service # Chọn các Pod có nhãn app=order-service
+  ports: # Định nghĩa cổng mạng
+  - protocol: TCP # Giao thức TCP
+    port: 3001 # Cổng truy cập của Service
+    targetPort: 3001 # Cổng thực tế của ứng dụng trong container
+  type: LoadBalancer # Cung cấp khả năng truy cập từ bên ngoài mạng Cluster

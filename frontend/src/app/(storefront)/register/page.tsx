@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import Turnstile from "@/components/storefront/Turnstile";
 
 export default function UserRegister() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function UserRegister() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ export default function UserRegister() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, captcha_token: captchaToken }),
       });
 
       if (!res.ok) {
@@ -97,9 +99,13 @@ export default function UserRegister() {
             />
           </div>
           
+          <div className="flex justify-center py-2">
+            <Turnstile onVerify={useCallback((token: string) => setCaptchaToken(token), [])} />
+          </div>
+          
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-black text-white py-3 rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
           >
             {loading ? "Creating account..." : "Sign up"}

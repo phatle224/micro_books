@@ -1,48 +1,48 @@
-receivers:
-  otlp:
+receivers: # Các cổng nhận dữ liệu đầu vào
+  otlp: # Giao thức OpenTelemetry Protocol
     protocols:
-      grpc:
+      grpc: # Nhận dữ liệu qua gRPC
         endpoint: 0.0.0.0:4317
-      http:
+      http: # Nhận dữ liệu qua HTTP
         endpoint: 0.0.0.0:4318
 
-processors:
-  batch:
-    timeout: 5s
-    send_batch_size: 1024
-  memory_limiter:
-    check_interval: 1s
-    limit_percentage: 80
-    spike_limit_percentage: 25
-  resourcedetection:
+processors: # Các bộ xử lý dữ liệu trước khi gửi đi
+  batch: # Gom dữ liệu thành từng đợt để tối ưu hiệu năng
+    timeout: 5s # Gửi mỗi 5 giây
+    send_batch_size: 1024 # Hoặc khi đủ 1024 bản ghi
+  memory_limiter: # Giới hạn bộ nhớ để tránh container bị crash (OOM)
+    check_interval: 1s # Kiểm tra mỗi giây
+    limit_percentage: 80 # Giới hạn ở mức 80% bộ nhớ cấp phát
+    spike_limit_percentage: 25 # Cho phép tăng đột biến thêm 25%
+  resourcedetection: # Tự động phát hiện thông tin về môi trường chạy (Hệ điều hành, Docker...)
     detectors: [env, system]
     timeout: 2s
-  # Force service_name label for Prometheus
-  attributes:
+  # Ép buộc tạo nhãn service_name cho Prometheus để vẽ biểu đồ dễ dàng hơn
+  attributes: 
     actions:
       - key: service_name
         from_attribute: service.name
         action: insert
 
-exporters:
-  otlp/tempo:
+exporters: # Các đích đến để đẩy dữ liệu đi (Output)
+  otlp/tempo: # Đẩy dữ liệu Trace sang Tempo
     endpoint: tempo:4317
     tls:
-      insecure: true
-  prometheus:
-    endpoint: 0.0.0.0:8889
+      insecure: true # Không dùng mã hóa TLS nội bộ
+  prometheus: # Đẩy dữ liệu Metrics cho Prometheus
+    endpoint: 0.0.0.0:8889 # Mở cổng để Prometheus tới lấy dữ liệu (Scrape)
     resource_to_telemetry_conversion:
-      enabled: true
-  logging:
+      enabled: true # Chuyển đổi các thuộc tính tài nguyên thành nhãn (labels) của Prometheus
+  logging: # Ghi log các hoạt động của collector để debug
     verbosity: basic
 
-service:
+service: # Cấu hình các luồng xử lý (Pipelines)
   pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, resourcedetection, attributes, batch]
-      exporters: [otlp/tempo, logging]
-    metrics:
-      receivers: [otlp]
-      processors: [memory_limiter, resourcedetection, attributes, batch]
-      exporters: [prometheus, logging]
+    traces: # Luồng xử lý Trace (Dấu vết request)
+      receivers: [otlp] # Nhận từ OTLP
+      processors: [memory_limiter, resourcedetection, attributes, batch] # Đi qua các bộ xử lý
+      exporters: [otlp/tempo, logging] # Đẩy sang Tempo và ghi log
+    metrics: # Luồng xử lý Metrics (Thông số hệ thống)
+      receivers: [otlp] # Nhận từ OTLP
+      processors: [memory_limiter, resourcedetection, attributes, batch] # Đi qua các bộ xử lý
+      exporters: [prometheus, logging] # Đẩy sang Prometheus và ghi log

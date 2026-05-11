@@ -1,13 +1,13 @@
 ﻿====================================================
          KẾT QUẢ SO SÁNH NÂNG CAO (BENCHMARK)
-         Thời gian: 09-05-2026 20:09:21
+         Thời gian: 09-05-2026 20:41:06
 ====================================================
 
 
 Tiêu chí          Chưa tối ưu        Đã tối ưu         Kết quả          
 --------          -----------        ---------         -------          
 Dung lượng (Size) 2.54GB             296MB             Giảm ~9 lần      
-Thời gian Build   413.73s            338.08s           Nhanh hơn        
+Thời gian Build   186.76s            3.67s             Nhanh hơn        
 Multi-stage Build Không (1 stage)    Có (2 stages)     Tối ưu dung lượng
 .dockerignore     Không có           Có sử dụng        Build sạch hơn   
 Layer Caching     Kém (Copy toàn bộ) Tốt (Tách deps)   Build lần 2 nhanh

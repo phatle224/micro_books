@@ -1,51 +1,51 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
+apiVersion: apps/v1 # Phiên bản API quản lý ứng dụng
+kind: Deployment # Triển khai OpenTelemetry Collector (Trạm trung chuyển dữ liệu giám sát)
+metadata: 
   name: otel-collector
   namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
+spec: 
+  replicas: 1 # Chạy 1 collector duy nhất
+  selector: 
+    matchLabels: 
       app: otel-collector
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: otel-collector
-    spec:
-      containers:
+    spec: 
+      containers: 
       - name: otel-collector
-        image: otel/opentelemetry-collector-contrib:0.100.0
-        args: ["--config=/etc/otelcol-contrib/config.yml"]
-        ports:
-        - containerPort: 4317
-        - containerPort: 4318
-        - containerPort: 8889
-        volumeMounts:
+        image: otel/opentelemetry-collector-contrib:0.100.0 # Image collector với nhiều tính năng đóng góp thêm
+        args: ["--config=/etc/otelcol-contrib/config.yml"] # Chạy với file cấu hình được gắn vào
+        ports: 
+        - containerPort: 4317 # Nhận dữ liệu gRPC
+        - containerPort: 4318 # Nhận dữ liệu HTTP
+        - containerPort: 8889 # Export dữ liệu cho Prometheus
+        volumeMounts: # Gắn file cấu hình từ ConfigMap vào container
         - name: otel-config
           mountPath: /etc/otelcol-contrib/config.yml
           subPath: otel-collector-config.yaml
-        resources:
-          requests:
+        resources: # Giới hạn tài nguyên
+          requests: 
             cpu: "100m"
             memory: "128Mi"
-          limits:
+          limits: 
             cpu: "200m"
             memory: "256Mi"
-      volumes:
+      volumes: # Định nghĩa nguồn cấu hình
       - name: otel-config
-        configMap:
+        configMap: 
           name: monitoring-configs
 ---
-apiVersion: v1
+apiVersion: v1 # Dịch vụ mạng cho Collector
 kind: Service
-metadata:
+metadata: 
   name: otel-collector
   namespace: microbooks
-spec:
-  selector:
+spec: 
+  selector: 
     app: otel-collector
-  ports:
+  ports: 
   - name: otlp-grpc
     port: 4317
     targetPort: 4317
@@ -56,85 +56,85 @@ spec:
     port: 8889
     targetPort: 8889
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Prometheus (Lưu trữ Metrics)
 kind: Deployment
-metadata:
+metadata: 
   name: prometheus
   namespace: microbooks
-spec:
+spec: 
   replicas: 1
-  selector:
-    matchLabels:
+  selector: 
+    matchLabels: 
       app: prometheus
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: prometheus
-    spec:
-      serviceAccountName: prometheus
-      containers:
+    spec: 
+      serviceAccountName: prometheus # Sử dụng tài khoản có quyền quét (scraping) Cluster
+      containers: 
       - name: prometheus
         image: prom/prometheus:v2.53.0
-        args:
+        args: 
           - "--config.file=/etc/prometheus/prometheus.yml"
-          - "--web.enable-remote-write-receiver"
-        ports:
+          - "--web.enable-remote-write-receiver" # Cho phép nhận data từ Collector
+        ports: 
         - containerPort: 9090
-        volumeMounts:
+        volumeMounts: 
         - name: prometheus-config
           mountPath: /etc/prometheus/prometheus.yml
           subPath: prometheus.yml
-        resources:
-          requests:
+        resources: 
+          requests: 
             cpu: "200m"
             memory: "256Mi"
-          limits:
+          limits: 
             cpu: "500m"
             memory: "512Mi"
-      volumes:
+      volumes: 
       - name: prometheus-config
-        configMap:
+        configMap: 
           name: monitoring-configs
 ---
-apiVersion: v1
+apiVersion: v1 # Service cho Prometheus Dashboard
 kind: Service
-metadata:
+metadata: 
   name: prometheus
   namespace: microbooks
-spec:
-  selector:
+spec: 
+  selector: 
     app: prometheus
-  ports:
+  ports: 
   - port: 9090
     targetPort: 9090
-  type: LoadBalancer
+  type: LoadBalancer # Để truy cập trực tiếp Dashboard Prometheus
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Grafana (Biểu đồ giám sát)
 kind: Deployment
-metadata:
+metadata: 
   name: grafana
   namespace: microbooks
-spec:
+spec: 
   replicas: 1
-  selector:
-    matchLabels:
+  selector: 
+    matchLabels: 
       app: grafana
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: grafana
-    spec:
-      containers:
+    spec: 
+      containers: 
       - name: grafana
         image: grafana/grafana:11.1.0
-        ports:
+        ports: 
         - containerPort: 3000
-        env:
+        env: # Tài khoản đăng nhập mặc định
         - name: GF_SECURITY_ADMIN_USER
           value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: "admin"
-        volumeMounts:
+        volumeMounts: # Gắn các file cấu hình tự động (Provisioning)
         - name: grafana-provisioning-datasources
           mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
           subPath: datasources.yaml
@@ -144,183 +144,183 @@ spec:
         - name: grafana-dashboards
           mountPath: /var/lib/grafana/dashboards/microservices-dashboard.json
           subPath: microservices-dashboard.json
-        resources:
-          requests:
+        resources: 
+          requests: 
             cpu: "100m"
             memory: "256Mi"
-          limits:
+          limits: 
             cpu: "500m"
             memory: "512Mi"
-      volumes:
+      volumes: # Các nguồn ConfigMap cho Grafana
       - name: grafana-provisioning-datasources
-        configMap:
+        configMap: 
           name: monitoring-configs
       - name: grafana-provisioning-dashboards
-        configMap:
+        configMap: 
           name: monitoring-configs
       - name: grafana-dashboards
-        configMap:
+        configMap: 
           name: monitoring-configs
 ---
-apiVersion: v1
+apiVersion: v1 # Service cho Grafana Dashboard
 kind: Service
-metadata:
+metadata: 
   name: grafana
   namespace: microbooks
-spec:
-  selector:
+spec: 
+  selector: 
     app: grafana
-  ports:
-  - port: 3005
+  ports: 
+  - port: 3005 # Truy cập qua cổng 3005
     targetPort: 3000
   type: LoadBalancer
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Loki (Lưu trữ Logs)
 kind: Deployment
-metadata:
+metadata: 
   name: loki
   namespace: microbooks
-spec:
+spec: 
   replicas: 1
-  selector:
-    matchLabels:
+  selector: 
+    matchLabels: 
       app: loki
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: loki
-    spec:
-      containers:
+    spec: 
+      containers: 
       - name: loki
         image: grafana/loki:3.1.0
         args: ["-config.file=/etc/loki/loki-config.yaml"]
-        ports:
+        ports: 
         - containerPort: 3100
-        volumeMounts:
+        volumeMounts: 
         - name: loki-config
           mountPath: /etc/loki/loki-config.yaml
           subPath: loki-config.yaml
-        resources:
-          requests:
+        resources: 
+          requests: 
             cpu: "100m"
             memory: "256Mi"
-          limits:
+          limits: 
             cpu: "300m"
             memory: "512Mi"
-      volumes:
+      volumes: 
       - name: loki-config
-        configMap:
+        configMap: 
           name: monitoring-configs
 ---
-apiVersion: v1
+apiVersion: v1 # Service nội bộ cho Loki
 kind: Service
-metadata:
+metadata: 
   name: loki
   namespace: microbooks
-spec:
-  selector:
+spec: 
+  selector: 
     app: loki
-  ports:
+  ports: 
   - port: 3100
     targetPort: 3100
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Promtail (Thu thập Logs container)
 kind: Deployment
-metadata:
+metadata: 
   name: promtail
   namespace: microbooks
-spec:
+spec: 
   replicas: 1
-  selector:
-    matchLabels:
+  selector: 
+    matchLabels: 
       app: promtail
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: promtail
-    spec:
-      serviceAccountName: promtail # Cần quyền để đọc Pod log
-      securityContext:
-        runAsUser: 0
-      containers:
+    spec: 
+      serviceAccountName: promtail # Cần quyền để đọc Pod log thông qua API
+      securityContext: 
+        runAsUser: 0 # Chạy với quyền root để đọc file log trên host
+      containers: 
       - name: promtail
         image: grafana/promtail:3.1.0
         args: ["-config.file=/etc/promtail/promtail-config.yml"]
-        volumeMounts:
+        volumeMounts: 
         - name: promtail-config
           mountPath: /etc/promtail/promtail-config.yml
           subPath: promtail-config.yaml
-        - name: varlog
+        - name: varlog # Gắn thư mục log của hệ thống
           mountPath: /var/log
-        - name: varlibdockercontainers
+        - name: varlibdockercontainers # Gắn thư mục chứa log của container Docker
           mountPath: /var/lib/docker/containers
           readOnly: true
-        resources:
-          requests:
+        resources: 
+          requests: 
             cpu: "50m"
             memory: "64Mi"
-          limits:
+          limits: 
             cpu: "100m"
             memory: "128Mi"
-      volumes:
+      volumes: 
       - name: promtail-config
-        configMap:
+        configMap: 
           name: monitoring-configs
       - name: varlog
-        hostPath:
+        hostPath: # Lấy từ ổ cứng máy host
           path: /var/log
       - name: varlibdockercontainers
-        hostPath:
+        hostPath: 
           path: /var/lib/docker/containers
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Tempo (Lưu trữ Traces)
 kind: Deployment
-metadata:
+metadata: 
   name: tempo
   namespace: microbooks
-spec:
+spec: 
   replicas: 1
-  selector:
-    matchLabels:
+  selector: 
+    matchLabels: 
       app: tempo
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: tempo
-    spec:
-      containers:
+    spec: 
+      containers: 
       - name: tempo
         image: grafana/tempo:2.5.0
         args: ["-config.file=/etc/tempo/tempo.yaml"]
-        ports:
-        - containerPort: 3200
-        - containerPort: 4317
-        - containerPort: 4318
-        volumeMounts:
+        ports: 
+        - containerPort: 3200 # Cổng Dashboard/API
+        - containerPort: 4317 # Cổng nhận gRPC traces
+        - containerPort: 4318 # Cổng nhận HTTP traces
+        volumeMounts: 
         - name: tempo-config
           mountPath: /etc/tempo/tempo.yaml
           subPath: tempo.yaml
-        resources:
-          requests:
+        resources: 
+          requests: 
             cpu: "100m"
             memory: "256Mi"
-          limits:
+          limits: 
             cpu: "300m"
             memory: "512Mi"
-      volumes:
+      volumes: 
       - name: tempo-config
-        configMap:
+        configMap: 
           name: monitoring-configs
 ---
-apiVersion: v1
+apiVersion: v1 # Service mạng cho Tempo
 kind: Service
-metadata:
+metadata: 
   name: tempo
   namespace: microbooks
-spec:
-  selector:
+spec: 
+  selector: 
     app: tempo
-  ports:
+  ports: 
   - name: http
     port: 3200
     targetPort: 3200

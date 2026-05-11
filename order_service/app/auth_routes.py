@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import os
+import httpx
 from fastapi import APIRouter, HTTPException, status, Depends
 
 from .auth import create_access_token, get_current_user, hash_password, verify_password
@@ -22,8 +24,31 @@ def public_user(user: dict) -> dict:
     }
 
 
+async def verify_turnstile(token: str):
+    secret_key = os.getenv("TURNSTILE_SECRET_KEY")
+    if not secret_key:
+        return True  # Skip if not configured
+        
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+            data={
+                "secret": secret_key,
+                "response": token,
+            },
+        )
+        result = response.json()
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CAPTCHA verification failed"
+            )
+    return True
+
+
 @router.post("/register", status_code=201)
 async def register(user: UserCreate):
+    await verify_turnstile(user.captcha_token)
     db = get_db()
     email = user.email.strip().lower()
     existing = await db.users.find_one({"email": email})
@@ -53,6 +78,7 @@ async def register(user: UserCreate):
 
 @router.post("/login")
 async def login(credentials: UserLogin):
+    await verify_turnstile(credentials.captcha_token)
     db = get_db()
     email = credentials.email.strip().lower()
     user = await db.users.find_one({"email": email})

@@ -1,11 +1,15 @@
 # Stage 1: Build
 FROM node:20-alpine AS builder
 
+# Thiết lập thư mục làm việc bên trong container là /app
 WORKDIR /app
 
+# Sao chép các file package.json và package-lock.json vào thư mục làm việc
+# Việc copy riêng giúp tận dụng Docker cache cho các node_modules
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Sao chép toàn bộ mã nguồn của project vào container
 COPY . .
 
 ARG ORDER_SERVICE_URL=http://order-service:3001

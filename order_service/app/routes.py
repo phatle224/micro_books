@@ -6,7 +6,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 from .models import OrderCreate, OrderUpdate, OrderStatus
 from .auth import get_current_user, require_admin
-from .kafka_producer import publish_order_created
+from .kafka_producer import publish_order_created, publish_order_updated
 
 router = APIRouter(prefix="/api/orders", tags=["Orders"])
 
@@ -24,48 +24,17 @@ async def create_order(order: OrderCreate, user: dict = Depends(get_current_user
     if not order.items:
         raise HTTPException(status_code=400, detail="Order must include at least one item")
 
-    validate_payload = {
-        "items": [
-            {"book_id": item.book_id, "quantity": item.quantity}
-            for item in order.items
-        ]
-    }
+    # --- BẤT ĐỒNG BỘ HÓA (DECOUPLING) ---
+    # Không gọi API trực tiếp sang Inventory nữa để hệ thống không bị sập khi Inventory bảo trì.
+    # Việc kiểm tra tồn kho sẽ được Inventory xử lý sau qua Kafka.
 
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.post(
-                f"{INVENTORY_SERVICE_URL}/api/books/validate-batch",
-                json=validate_payload,
-            )
-    except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Inventory service unavailable")
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=502, detail="Failed to validate inventory")
-
-    validation = response.json()
-    if not validation.get("available"):
-        raise HTTPException(
-            status_code=409,
-            detail={"message": "Insufficient stock", "items": validation.get("items", [])},
-        )
-
-    validated_items = validation.get("items", [])
-    validated_by_id = {item.get("book_id"): item for item in validated_items}
     order_items = []
     for item in order.items:
-        info = validated_by_id.get(item.book_id)
-        if not info or not info.get("available"):
-            raise HTTPException(
-                status_code=409,
-                detail={"message": "Insufficient stock", "items": validated_items},
-            )
-
         order_items.append({
             "book_id": item.book_id,
-            "title": info.get("title", item.title),
-            "price": info.get("price", item.price),
-            "quantity": info.get("requested", item.quantity),
+            "title": item.title,
+            "price": item.price,
+            "quantity": item.quantity,
         })
 
     total_amount = sum(item["price"] * item["quantity"] for item in order_items)
@@ -180,6 +149,13 @@ async def update_order(order_id: str, update: OrderUpdate, user: dict = Depends(
 
     order = await db.orders.find_one({"_id": ObjectId(order_id)})
     order["_id"] = str(order["_id"])
+
+    # Publish update event to Kafka so other services (Inventory, Email, etc.) can react
+    try:
+        await publish_order_updated(order["_id"], order["status"])
+    except Exception as e:
+        print(f"Warning: Failed to publish update event: {e}")
+
     return {"message": "Order updated", "order": order}
 
 

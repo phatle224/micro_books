@@ -6,7 +6,6 @@ ORDER_SERVICE_URL = "http://localhost:3001/api/orders"
 INVENTORY_SERVICE_URL = "http://localhost:3002/api/books"
 AUTH_SERVICE_URL = "http://localhost:3001/api/auth"
 
-
 def get_auth_token(email: str, password: str, name: str = "Test User") -> str:
     # Thử lại nhiều lần vì trong CI dịch vụ có thể khởi động chậm
     for attempt in range(5):

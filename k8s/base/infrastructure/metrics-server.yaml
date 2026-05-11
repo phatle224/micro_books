@@ -1,153 +1,153 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
+apiVersion: v1 # Phiên bản API cơ bản
+kind: ServiceAccount # Tài khoản định danh cho Metrics Server
+metadata: 
   name: metrics-server
-  namespace: kube-system
+  namespace: kube-system # Triển khai trong hệ thống của Kubernetes
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
+apiVersion: rbac.authorization.k8s.io/v1 # Phân quyền truy cập
+kind: ClusterRole # Vai trò đọc metrics cho toàn bộ cụm
+metadata: 
   name: system:aggregated-metrics-reader
-  labels:
+  labels: # Tự động gán quyền vào các vai trò quản trị/chỉnh sửa mặc định
     rbac.authorization.k8s.io/aggregate-to-admin: "true"
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
     rbac.authorization.k8s.io/aggregate-to-view: "true"
-rules:
-  - apiGroups: ["metrics.k8s.io"]
-    resources:
+rules: 
+  - apiGroups: ["metrics.k8s.io"] # Nhóm API cung cấp thông số tài nguyên
+    resources: 
       - pods
       - nodes
     verbs: ["get", "list", "watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Vai trò cụ thể cho bản thân Metrics Server
 kind: ClusterRole
-metadata:
+metadata: 
   name: system:metrics-server
-rules:
-  - apiGroups: [""]
-    resources:
+rules: 
+  - apiGroups: [""] # Quyền lấy metrics từ các nút (nodes)
+    resources: 
       - nodes/metrics
     verbs: ["get"]
-  - apiGroups: [""]
-    resources:
+  - apiGroups: [""] # Quyền liệt kê tài nguyên cơ bản
+    resources: 
       - pods
       - nodes
       - namespaces
       - configmaps
     verbs: ["get", "list", "watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Liên kết xác thực
 kind: RoleBinding
-metadata:
+metadata: 
   name: metrics-server-auth-reader
   namespace: kube-system
-roleRef:
+roleRef: 
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: extension-apiserver-authentication-reader
-subjects:
+subjects: 
   - kind: ServiceAccount
     name: metrics-server
     namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Ủy quyền xác thực
 kind: ClusterRoleBinding
-metadata:
+metadata: 
   name: metrics-server:system:auth-delegator
-roleRef:
+roleRef: 
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:auth-delegator
-subjects:
+subjects: 
   - kind: ServiceAccount
     name: metrics-server
     namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1 # Liên kết vai trò chính cho Metrics Server
 kind: ClusterRoleBinding
-metadata:
+metadata: 
   name: system:metrics-server
-roleRef:
+roleRef: 
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:metrics-server
-subjects:
+subjects: 
   - kind: ServiceAccount
     name: metrics-server
     namespace: kube-system
 ---
-apiVersion: v1
+apiVersion: v1 # Dịch vụ mạng nội bộ cho Metrics Server
 kind: Service
-metadata:
+metadata: 
   name: metrics-server
   namespace: kube-system
-spec:
-  selector:
+spec: 
+  selector: 
     app: metrics-server
-  ports:
+  ports: 
     - name: https
-      port: 443
+      port: 443 # Phơi qua cổng 443 bảo mật
       targetPort: https
 ---
-apiVersion: apps/v1
+apiVersion: apps/v1 # Triển khai Metrics Server
 kind: Deployment
-metadata:
+metadata: 
   name: metrics-server
   namespace: kube-system
-  labels:
+  labels: 
     app: metrics-server
-spec:
-  selector:
-    matchLabels:
+spec: 
+  selector: 
+    matchLabels: 
       app: metrics-server
-  template:
-    metadata:
-      labels:
+  template: 
+    metadata: 
+      labels: 
         app: metrics-server
-    spec:
-      serviceAccountName: metrics-server
-      priorityClassName: system-cluster-critical
-      containers:
+    spec: 
+      serviceAccountName: metrics-server # Sử dụng tài khoản đã phân quyền ở trên
+      priorityClassName: system-cluster-critical # Mức độ ưu tiên cực cao trong cụm
+      containers: 
         - name: metrics-server
-          image: registry.k8s.io/metrics-server/metrics-server:v0.7.2
-          args:
+          image: registry.k8s.io/metrics-server/metrics-server:v0.7.2 # Image Metrics Server chính thức
+          args: # Các tham số khởi chạy quan trọng
             - --cert-dir=/tmp
-            - --secure-port=10250
-            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+            - --secure-port=10250 # Cổng bảo mật nội bộ
+            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname # Ưu tiên dùng IP nội bộ để lấy data
             - --kubelet-use-node-status-port
-            - --metric-resolution=15s
-            - --kubelet-insecure-tls
-          ports:
+            - --metric-resolution=15s # Độ phân giải dữ liệu (mỗi 15 giây)
+            - --kubelet-insecure-tls # Bỏ qua kiểm tra chứng chỉ TLS của Kubelet (thường dùng trong lab/dev)
+          ports: 
             - containerPort: 10250
               name: https
-          livenessProbe:
-            httpGet:
+          livenessProbe: # Kiểm tra xem dịch vụ còn sống không
+            httpGet: 
               path: /livez
               port: https
               scheme: HTTPS
             initialDelaySeconds: 20
             periodSeconds: 10
-          readinessProbe:
-            httpGet:
+          readinessProbe: # Kiểm tra xem đã sẵn sàng phục vụ chưa
+            httpGet: 
               path: /readyz
               port: https
               scheme: HTTPS
             initialDelaySeconds: 20
             periodSeconds: 10
-          resources:
-            requests:
+          resources: # Yêu cầu tài nguyên để đảm bảo hoạt động ổn định
+            requests: 
               cpu: "100m"
               memory: "200Mi"
-            limits:
+            limits: 
               cpu: "250m"
               memory: "300Mi"
 ---
-apiVersion: apiregistration.k8s.io/v1
+apiVersion: apiregistration.k8s.io/v1 # Đăng ký API vào hệ thống Kubernetes
 kind: APIService
-metadata:
-  name: v1beta1.metrics.k8s.io
-spec:
-  service:
+metadata: 
+  name: v1beta1.metrics.k8s.io # Tên API để các tool như 'kubectl top' có thể gọi
+spec: 
+  service: 
     name: metrics-server
     namespace: kube-system
   group: metrics.k8s.io

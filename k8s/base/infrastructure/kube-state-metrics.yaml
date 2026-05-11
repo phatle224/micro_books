@@ -1,16 +1,16 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: kube-state-metrics
-  namespace: microbooks
+apiVersion: v1 # Phiên bản API cơ bản
+kind: ServiceAccount # Tài khoản định danh cho dịch vụ kube-state-metrics
+metadata: 
+  name: kube-state-metrics # Tên tài khoản
+  namespace: microbooks # Đặt trong namespace microbooks
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: kube-state-metrics
-rules:
-  - apiGroups: [""]
-    resources:
+apiVersion: rbac.authorization.k8s.io/v1 # Phiên bản API phân quyền (RBAC)
+kind: ClusterRole # Vai trò cấp Cluster (có quyền trên toàn bộ Cluster)
+metadata: 
+  name: kube-state-metrics # Tên vai trò
+rules: # Các quy tắc cho phép truy cập tài nguyên
+  - apiGroups: [""] # Các tài nguyên thuộc nhóm core
+    resources: 
       - configmaps
       - endpoints
       - events
@@ -24,110 +24,110 @@ rules:
       - resourcequotas
       - services
       - secrets
-    verbs: ["list", "watch"]
-  - apiGroups: ["apps"]
-    resources:
+    verbs: ["list", "watch"] # Chỉ cho phép liệt kê và theo dõi (không cho sửa/xóa)
+  - apiGroups: ["apps"] # Các tài nguyên thuộc nhóm ứng dụng
+    resources: 
       - daemonsets
       - deployments
       - replicasets
       - statefulsets
     verbs: ["list", "watch"]
-  - apiGroups: ["autoscaling"]
-    resources:
+  - apiGroups: ["autoscaling"] # Tài nguyên tự động giãn nở
+    resources: 
       - horizontalpodautoscalers
     verbs: ["list", "watch"]
-  - apiGroups: ["batch"]
-    resources:
+  - apiGroups: ["batch"] # Các công việc chạy theo lô
+    resources: 
       - cronjobs
       - jobs
     verbs: ["list", "watch"]
-  - apiGroups: ["networking.k8s.io"]
-    resources:
+  - apiGroups: ["networking.k8s.io"] # Tài nguyên mạng
+    resources: 
       - ingresses
       - networkpolicies
     verbs: ["list", "watch"]
-  - apiGroups: ["policy"]
-    resources:
+  - apiGroups: ["policy"] # Các chính sách
+    resources: 
       - poddisruptionbudgets
     verbs: ["list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources:
+  - apiGroups: ["storage.k8s.io"] # Tài nguyên lưu trữ
+    resources: 
       - storageclasses
       - volumeattachments
     verbs: ["list", "watch"]
-  - apiGroups: ["admissionregistration.k8s.io"]
-    resources:
+  - apiGroups: ["admissionregistration.k8s.io"] # Cấu hình webhook
+    resources: 
       - mutatingwebhookconfigurations
       - validatingwebhookconfigurations
     verbs: ["list", "watch"]
-  - apiGroups: ["coordination.k8s.io"]
-    resources:
+  - apiGroups: ["coordination.k8s.io"] # Tài nguyên điều phối
+    resources: 
       - leases
     verbs: ["list", "watch"]
-  - apiGroups: ["certificates.k8s.io"]
-    resources:
+  - apiGroups: ["certificates.k8s.io"] # Tài nguyên chứng chỉ
+    resources: 
       - certificatesigningrequests
     verbs: ["list", "watch"]
-  - apiGroups: ["discovery.k8s.io"]
-    resources:
+  - apiGroups: ["discovery.k8s.io"] # Tài nguyên khám phá dịch vụ
+    resources: 
       - endpointslices
     verbs: ["list", "watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kube-state-metrics
-roleRef:
+apiVersion: rbac.authorization.k8s.io/v1 # Phiên bản API phân quyền
+kind: ClusterRoleBinding # Liên kết vai trò với tài khoản dịch vụ
+metadata: 
+  name: kube-state-metrics # Tên liên kết
+roleRef: # Tham chiếu tới vai trò đã định nghĩa ở trên
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: kube-state-metrics
-subjects:
+subjects: # Đối tượng được gán quyền
   - kind: ServiceAccount
-    name: kube-state-metrics
+    name: kube-state-metrics # Gán quyền cho tài khoản kube-state-metrics
     namespace: microbooks
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
+apiVersion: apps/v1 # Phiên bản API triển khai
+kind: Deployment # Triển khai dịch vụ kube-state-metrics (thu thập trạng thái Cluster)
+metadata: 
   name: kube-state-metrics
   namespace: microbooks
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: kube-state-metrics
-  template:
-    metadata:
-      labels:
+spec: 
+  replicas: 1 # Chạy 1 bản sao
+  selector: 
+    matchLabels: 
+      app: kube-state-metrics # Nhãn định danh
+  template: 
+    metadata: 
+      labels: 
         app: kube-state-metrics
-    spec:
-      serviceAccountName: kube-state-metrics
-      containers:
+    spec: 
+      serviceAccountName: kube-state-metrics # Sử dụng tài khoản có quyền đọc ở trên
+      containers: 
         - name: kube-state-metrics
-          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
-          ports:
-            - containerPort: 8080
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0 # Image thu thập trạng thái chính thức
+          ports: 
+            - containerPort: 8080 # Cổng phơi metrics
               name: http-metrics
-          args:
-            - --port=8080
-            - --resources=pods,deployments,replicasets,nodes,namespaces,services,configmaps,secrets,horizontalpodautoscalers
-          resources:
-            requests:
+          args: # Các tham số dòng lệnh
+            - --port=8080 # Chỉ định cổng lắng nghe
+            - --resources=pods,deployments,replicasets,nodes,namespaces,services,configmaps,secrets,horizontalpodautoscalers # Các tài nguyên cần thu thập metrics
+          resources: # Giới hạn tài nguyên
+            requests: 
               cpu: "50m"
               memory: "64Mi"
-            limits:
+            limits: 
               cpu: "200m"
               memory: "256Mi"
 ---
-apiVersion: v1
-kind: Service
-metadata:
+apiVersion: v1 # Phiên bản API Service
+kind: Service # Tạo Service để Prometheus có thể quét metrics
+metadata: 
   name: kube-state-metrics
   namespace: microbooks
-spec:
-  selector:
-    app: kube-state-metrics
-  ports:
+spec: 
+  selector: 
+    app: kube-state-metrics # Trỏ tới Pod kube-state-metrics
+  ports: 
     - name: http-metrics
-      port: 8080
-      targetPort: http-metrics
+      port: 8080 # Cổng Service
+      targetPort: http-metrics # Cổng thực tế trên container
