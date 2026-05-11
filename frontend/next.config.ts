@@ -4,6 +4,15 @@ const orderServiceUrl = process.env.ORDER_SERVICE_URL || "http://localhost:3001"
 const inventoryServiceUrl = process.env.INVENTORY_SERVICE_URL || "http://localhost:3002";
 
 const nextConfig: NextConfig = {
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return [
       {

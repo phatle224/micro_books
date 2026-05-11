@@ -119,7 +119,8 @@ services:
     environment:
       ORDER_SERVICE_URL: http://order_service:3001
       INVENTORY_SERVICE_URL: http://inventory_service:3002
-      # Kích hoạt Polling cho Next.js/Webpack
+      NODE_ENV: development
+      # Kích hoạt Polling cho Next.js/Webpack (cần thiết trên Windows)
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     volumes:
@@ -129,7 +130,7 @@ services:
     depends_on:
       - order_service
       - inventory_service
-    command: npm run dev -- --hostname 0.0.0.0
+    command: npm run dev -- --hostname 0.0.0.0 --webpack
     restart: unless-stopped
 
   otel-collector:
