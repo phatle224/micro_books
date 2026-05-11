@@ -129,7 +129,7 @@ services:
     depends_on:
       - order_service
       - inventory_service
-    command: npm run dev -- --hostname 0.0.0.0 --webpack
+    command: npm run dev -- --hostname 0.0.0.0
     restart: unless-stopped
 
   otel-collector:

@@ -2,22 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, X } from "lucide-react";
+import { fetchJsonResult } from "@/lib/fetchJsonResult";
 
 export default function AdminBooks() {
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: "", author: "", price: "", stock: "", category: "" });
 
   const fetchBooks = () => {
     setLoading(true);
-    fetch("/api/books")
-      .then(res => res.json())
-      .then(data => {
-        setBooks(data.books || []);
+    setError(null);
+    fetchJsonResult<{ books?: any[] }>("/api/books").then(result => {
+      if (result.ok) {
+        setBooks(result.data.books || []);
+      } else {
+        setBooks([]);
+        setError("Inventory service is unavailable right now.");
+      }
         setLoading(false);
-      });
+    });
   };
 
   useEffect(() => {
@@ -86,6 +92,11 @@ export default function AdminBooks() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+        {error && (
+          <div className="border-b border-gray-200 bg-red-50 px-6 py-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">

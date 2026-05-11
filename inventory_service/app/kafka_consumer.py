@@ -61,7 +61,8 @@ async def consume_order_events(db):
                     from .kafka_producer import publish_stock_failed
                     await publish_stock_failed(order_id, failure_reason)
                 else:
-                    # Optional: Publish a success event if needed
+                    from .kafka_producer import publish_stock_success
+                    await publish_stock_success(order_id)
                     logger.info(f"Inventory reserved successfully for order {order_id}")
 
         except Exception as e:

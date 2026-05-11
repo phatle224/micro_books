@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { fetchJsonResult } from "@/lib/fetchJsonResult";
 
 interface Book {
   _id: string;
@@ -96,6 +97,7 @@ export default function BookDetailsPage() {
   const { showToast } = useToast();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [selectedView, setSelectedView] = useState("front");
@@ -105,16 +107,17 @@ export default function BookDetailsPage() {
   const goPrev = () => setSelectedView(BOOK_VIEWS[(currentIndex - 1 + BOOK_VIEWS.length) % BOOK_VIEWS.length].id);
 
   useEffect(() => {
-    fetch(`/api/books/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setBook(data);
+    setLoading(true);
+    setError(null);
+    fetchJsonResult<Book>(`/api/books/${id}`).then((result) => {
+      if (result.ok) {
+        setBook(result.data);
+      } else {
+        setBook(null);
+        setError("This book cannot be loaded right now because the inventory service is unavailable.");
+      }
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    });
   }, [id]);
 
   const addToCart = () => {
@@ -175,9 +178,9 @@ export default function BookDetailsPage() {
     return (
       <div className="text-center py-40 animate-fade-in-up">
         <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-        <h1 className="text-2xl font-semibold mb-3">Book Not Found</h1>
+        <h1 className="text-2xl font-semibold mb-3">{error ? "Book Unavailable" : "Book Not Found"}</h1>
         <p className="text-gray-500 mb-6">
-          This book doesn&apos;t exist or has been removed.
+          {error || "This book doesn&apos;t exist or has been removed."}
         </p>
         <Link
           href="/books"

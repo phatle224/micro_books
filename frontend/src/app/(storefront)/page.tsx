@@ -8,6 +8,7 @@ import { MacCodeWindow } from "@/components/storefront/MacCodeWindow";
 import { TechStackCarousel } from "@/components/storefront/TechStackCarousel";
 import { FeaturedBooksCarousel } from "@/components/storefront/FeaturedBooksCarousel";
 import { TrustedByCarousel } from "@/components/storefront/TrustedByCarousel";
+import { fetchJsonResult } from "@/lib/fetchJsonResult";
 
 interface Book {
   _id: string;
@@ -22,10 +23,11 @@ export default function Home() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
 
   useEffect(() => {
-    fetch("/api/books?limit=8")
-      .then((res) => res.json())
-      .then((data) => setFeaturedBooks(data.books || []))
-      .catch((err) => console.error(err));
+    fetchJsonResult<{ books?: Book[] }>("/api/books?limit=8").then((result) => {
+      if (result.ok) {
+        setFeaturedBooks(result.data.books || []);
+      }
+    });
   }, []);
 
   return (

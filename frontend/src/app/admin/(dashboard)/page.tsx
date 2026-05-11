@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { DollarSign, ShoppingBag, Book, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { fetchJsonResult } from "@/lib/fetchJsonResult";
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [orderStats, setOrderStats] = useState<any>(null);
   const [inventoryStats, setInventoryStats] = useState<any>(null);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,11 +30,16 @@ export default function AdminDashboard() {
         }
         return res.json();
       }),
-      fetch("/api/books/stats/summary").then(res => res.json())
-    ]).then(([orders, inventory]) => {
+      fetchJsonResult("/api/books/stats/summary").then(result => {
+        if (!result.ok) {
+          setInventoryError("Inventory statistics are currently unavailable.");
+        }
+        return result;
+      }),
+    ]).then(([orders, inventoryResult]) => {
       if (!orders) return;
       setOrderStats(orders);
-      setInventoryStats(inventory);
+      setInventoryStats(inventoryResult?.ok ? inventoryResult.data : null);
       setLoading(false);
     }).catch(err => {
       console.error(err);
@@ -81,6 +88,7 @@ export default function AdminDashboard() {
               <h3 className="text-2xl font-semibold">{inventoryStats?.total_books || 0}</h3>
             </div>
           </div>
+          {inventoryError && <p className="text-xs text-red-600">{inventoryError}</p>}
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">

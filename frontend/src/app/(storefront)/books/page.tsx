@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingCart } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
+import { fetchJsonResult } from "@/lib/fetchJsonResult";
 
 interface Book {
   _id: string;
@@ -20,18 +21,20 @@ export default function BooksPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/books")
-      .then((res) => res.json())
-      .then((data) => {
-        setBooks(data.books || []);
+    setLoading(true);
+    setError(null);
+    fetchJsonResult<{ books?: Book[] }>("/api/books").then((result) => {
+      if (result.ok) {
+        setBooks(result.data.books || []);
+      } else {
+        setBooks([]);
+        setError("The catalog is temporarily unavailable. Please try again after the inventory service is back online.");
+      }
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    });
   }, []);
 
   const addToCart = (e: React.MouseEvent, book: Book) => {
@@ -102,6 +105,11 @@ export default function BooksPage() {
       {loading ? (
         <div className="flex justify-center py-32">
           <div className="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-24 px-6 bg-gray-50 rounded-3xl border border-gray-100">
+          <p className="text-lg font-semibold text-gray-900 mb-2">Catalog unavailable</p>
+          <p className="text-gray-500 max-w-xl mx-auto">{error}</p>
         </div>
       ) : filteredBooks.length === 0 ? (
         <div className="text-center py-32 text-gray-500 bg-gray-50 rounded-3xl border border-gray-100">
