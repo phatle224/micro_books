@@ -3,7 +3,8 @@ from pydantic import ValidationError
 from app.models import BookCreate, BookValidationRequest
 
 def test_book_create_validation():
-    # Valid data
+    """Kiểm tra tính hợp lệ của dữ liệu khi tạo sách mới (Pydantic Model)"""
+    # Trường hợp 1: Dữ liệu đầy đủ và đúng định dạng
     book_data = {
         "title": "Clean Code",
         "author": "Robert C. Martin",
@@ -14,7 +15,7 @@ def test_book_create_validation():
     assert book.title == "Clean Code"
     assert book.price == 29.99
 
-    # Invalid data (missing required field)
+    # Trường hợp 2: Thiếu trường bắt buộc (author) -> Phải báo lỗi ValidationError
     invalid_data = {
         "title": "Missing Author",
         "price": 19.99
@@ -23,6 +24,7 @@ def test_book_create_validation():
         BookCreate(**invalid_data)
 
 def test_book_validation_request():
+    """Kiểm tra tính hợp lệ của yêu cầu xác thực danh sách sách"""
     payload = {
         "items": [
             {"book_id": "book1", "quantity": 2},

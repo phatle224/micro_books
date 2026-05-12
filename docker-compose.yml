@@ -1,4 +1,6 @@
 services:
+  # --- INFRASTRUCTURE SERVICES ---
+  # Zookeeper: Quản lý cấu hình và điều phối cho Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: microbooks-zookeeper
@@ -8,6 +10,7 @@ services:
     ports:
       - "2181:2181"
 
+  # Kafka: Hệ thống message broker để các service giao tiếp async
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: microbooks-kafka
@@ -31,6 +34,9 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+
+  # --- APPLICATION SERVICES ---
+  # Order Service: Quản lý đơn hàng (Python/FastAPI)
   order_service:
     image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-order-service:latest
     build:
@@ -65,6 +71,8 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload
     restart: unless-stopped
 
+
+  # Inventory Service: Quản lý kho hàng (Python/FastAPI)
   inventory_service:
     image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-inventory-service:latest
     build:
@@ -93,6 +101,8 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload
     restart: unless-stopped
 
+
+  # Kafka UI: Giao diện web để quản lý và theo dõi Kafka topics
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: microbooks-kafka-ui
@@ -108,6 +118,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+
+  # Frontend: Giao diện người dùng (Next.js)
   frontend:
     image: ${DOCKER_HUB_USERNAME:-kietne1211}/microbooks-frontend:latest
     build:
@@ -133,6 +145,8 @@ services:
     command: npm run dev -- --hostname 0.0.0.0 --webpack
     restart: unless-stopped
 
+  # --- MONITORING & OBSERVABILITY STACK ---
+  # OpenTelemetry Collector: Thu thập metrics, logs, traces từ các service
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.100.0
     container_name: microbooks-otel-collector
@@ -147,6 +161,8 @@ services:
       - tempo
       - loki
 
+
+  # Prometheus: Lưu trữ và truy vấn dữ liệu metrics
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: microbooks-prometheus
@@ -161,6 +177,8 @@ services:
     depends_on:
       - otel-collector
 
+
+  # Grafana: Dashboard trực quan hóa dữ liệu từ Prometheus, Loki, Tempo
   grafana:
     image: grafana/grafana:11.1.0
     container_name: microbooks-grafana
@@ -179,6 +197,8 @@ services:
       - loki
       - tempo
 
+
+  # Loki: Hệ thống lưu trữ và quản lý Logs
   loki:
     image: grafana/loki:3.1.0
     container_name: microbooks-loki
@@ -189,6 +209,8 @@ services:
     ports:
       - "3100:3100"
 
+
+  # Promtail: Thu thập logs từ container và đẩy về Loki
   promtail:
     image: grafana/promtail:3.1.0
     container_name: microbooks-promtail
@@ -199,6 +221,8 @@ services:
     depends_on:
       - loki
 
+
+  # Tempo: Hệ thống lưu trữ và truy vấn Distributed Tracing
   tempo:
     image: grafana/tempo:2.5.0
     container_name: microbooks-tempo
@@ -209,6 +233,7 @@ services:
     ports:
       - "3200:3200"
 
+# Định nghĩa các volume để lưu trữ dữ liệu bền vững (database, metrics, logs)
 volumes:
   grafana_data:
   prometheus_data:
