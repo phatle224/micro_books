@@ -30,6 +30,7 @@
 
 **MicroBooks v2.0** is a production-grade, event-driven microservices system built with FastAPI, Next.js, and Apache Kafka. It features an automated CI/CD pipeline via GitHub Actions and a comprehensive observability stack. Containerized with Docker and Kubernetes-ready, it provides a robust, scalable environment for modern software development.
 
+
 ---
 
 Modern Microservices-based bookstore management system using **Apache Kafka** for asynchronous communication, **MongoDB Atlas** for cloud storage, and integrated automated **CI/CD pipelines** for local deployment.
@@ -116,6 +117,23 @@ graph TD
 | **CI/CD**          | GitHub Actions (Self-hosted Runner)                 |
 | **Observability**  | OpenTelemetry + Prometheus + Grafana + Loki + Tempo |
 
+## 📖 Project Resources (Documentation & Slides)
+
+For a comprehensive overview, detailed project reports, and presentation slides, please access our dedicated resources folder:
+
+<p align="center">
+  <a href="https://drive.google.com/drive/folders/1bhwyC1pYme5amftAF43Vg7i5E5mcNYHk?usp=sharing">
+    <img src="https://img.shields.io/badge/Google_Drive-View_Project_Docs_&_Slides-blue?style=for-the-badge&logo=googledrive&logoColor=white" alt="View Documentation" />
+  </a>
+</p>
+
+This folder contains:
+- 📄 **Detailed Project Report** (Architecture, Design Decisions, Implementation).
+- 📊 **Presentation Slides** for project demonstrations.
+- 📐 **High-Resolution Diagrams** of the system workflow and database schema.
+- 📝 **Supplementary Technical Documentation**.
+
+
 ## 📁 Project Directory Structure
 
 ```bash
@@ -144,6 +162,16 @@ The system is integrated with a complete **Automation** workflow:
 
 > View details at: [local-deploy.yml](.github/workflows/local-deploy.yml)
 
+<p align="center">
+  <img src="image/readme/ci_cd.png" width="49%" alt="CI/CD Status"/>
+  <img src="image/readme/github_issues.png" width="49%" alt="GitHub Issues Management"/>
+</p>
+<p align="center">
+  <img src="image/readme/self_hostrunner.png" width="49%" alt="Self-hosted Runner Configuration"/>
+  <img src="image/readme/docker_hub.png" width="49%" alt="Docker Hub Registry"/>
+</p>
+
+
 ## 🛠️ Installation Guide
 
 ### Run with Docker Compose (Recommended)
@@ -161,6 +189,11 @@ cp .env.example .env
 docker-compose up --build -d
 ```
 
+<p align="center">
+  <img src="image/readme/docker_container.png" width="100%" alt="Docker Containers Running"/>
+</p>
+
+
 ### Run with Kubernetes (K8s)
 
 Ensure Kubernetes is enabled in Docker Desktop or Minikube.
@@ -171,6 +204,12 @@ kubectl apply -k k8s/base
 
 # 2. Wait until all Pods are in Running state
 kubectl get pods -n microbooks -w
+
+<p align="center">
+  <img src="image/readme/demo_k8s.png" width="49%" alt="Kubernetes Deployment Demo"/>
+  <img src="image/readme/k8s_pods.png" width="49%" alt="Kubernetes Pods Status"/>
+</p>
+
 
 # 3. Port-forward to access the Frontend (run in a separate terminal)
 kubectl port-forward svc/frontend 3000:3000 -n microbooks
@@ -188,6 +227,14 @@ kubectl delete -k k8s/base
 | **Kafka UI**           | [http://localhost:8080](http://localhost:8080)             | Message Queue Monitoring       |
 | **Order API Docs**     | [http://localhost:3001/docs](http://localhost:3001/docs)   | Swagger UI (Order Service)     |
 | **Inventory API Docs** | [http://localhost:3002/docs](http://localhost:3002/docs)   | Swagger UI (Inventory Service) |
+
+<p align="center">
+  <img src="image/readme/giaodien_client.png" width="49%" alt="Client Interface"/>
+  <img src="image/readme/book_catalog.png" width="49%" alt="Book Catalog View"/>
+</p>
+<p align="center">
+  <img src="image/readme/full_screen_client_dashboard.png" width="100%" alt="Client Dashboard Preview"/>
+</p>
 
 ## 📊 Kafka Monitoring (User Access)
 
@@ -237,6 +284,14 @@ The observability stack is pre-configured using OpenTelemetry + Prometheus + Gra
 - Logs are collected using Promtail (docker logs) and displayed via Loki.
 - Traces are stored in Tempo and can be viewed in Grafana Explore.
 
+<p align="center">
+  <img src="image/readme/grafana_dashboard.png" width="100%" alt="Grafana Monitoring Dashboard"/>
+</p>
+<p align="center">
+  <img src="image/readme/tempo_tracing.png" width="100%" alt="Tempo Distributed Tracing"/>
+</p>
+
+
 ## 🔐 Administration (Admin Portal)
 
 You can access the admin portal to manage the bookstore, orders, and monitor Kafka:
@@ -251,6 +306,15 @@ You can access the admin portal to manage the bookstore, orders, and monitor Kaf
 | `/admin/books`  | Book Inventory Management         |
 | `/admin/orders` | Order Management                  |
 | `/admin/kafka`  | Kafka Monitor (embedded Kafka UI) |
+
+<p align="center">
+  <img src="image/readme/admin.png" width="100%" alt="Admin Dashboard Overview"/>
+</p>
+<p align="center">
+  <img src="image/readme/Inventory_Manage.png" width="49%" alt="Inventory Management System"/>
+  <img src="image/readme/Order_Manage.png" width="49%" alt="Order Management System"/>
+</p>
+
 
 ## 📡 API Endpoints
 
