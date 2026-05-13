@@ -282,7 +282,7 @@ The observability stack is pre-configured using OpenTelemetry + Prometheus + Gra
 - Order/Inventory services have OpenTelemetry enabled when running via Docker Compose.
 - Metrics are pushed through the OpenTelemetry Collector and scraped by Prometheus.
 - Logs are collected using Promtail (docker logs) and displayed via Loki.
-- Traces are stored in Tempo and can be viewed in Grafana Explore.
+- Traces are stored in Tempo and can be viewed in Grafana Explore..
 
 <p align="center">
   <img src="image/readme/grafana_dashboard.png" width="100%" alt="Grafana Monitoring Dashboard"/>
